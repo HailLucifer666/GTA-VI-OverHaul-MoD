@@ -18,3 +18,7 @@ packages/
 # OS clutter
 Thumbs.db
 Desktop.ini
+
+# Local research & artwork (kept on disk, excluded from git)
+Assets/
+Multi LLM ReSearchs/

@@ -38,6 +38,8 @@
   <ItemGroup>
     <Compile Include="Module1\WeaponAndZoneConfig.cs" />
     <Compile Include="Module1\WeaponAndZoneController.cs" />
+    <Compile Include="Module2\EmergencyDispatchConfig.cs" />
+    <Compile Include="Module2\EmergencyDispatchController.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

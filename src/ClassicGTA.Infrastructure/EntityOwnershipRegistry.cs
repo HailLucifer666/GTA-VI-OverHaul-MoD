@@ -9,7 +9,7 @@ namespace ClassicGTA.Infrastructure
     /// and Scripted Cameras (restoring rendering camera before deletion).
     /// Prevents entity leaks and accidental deletion of player-owned vehicles.
     /// </summary>
-    public sealed class EntityOwnershipRegistry
+    public sealed class EntityOwnershipRegistry : IEntityRegistry
     {
         private sealed class EntityRecord
         {

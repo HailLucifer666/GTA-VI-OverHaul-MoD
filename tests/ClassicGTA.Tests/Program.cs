@@ -29,6 +29,8 @@ namespace ClassicGTA.Tests
                 Test("12_PocketArsenal_IsIdempotentAndDisposeNeverRemovesWeapons", PocketArsenal_IsIdempotentAndDisposeNeverRemovesWeapons)
             };
 
+            tests.AddRange(InfrastructureTests.GetAll());
+
             int passed = 0;
             int failed = 0;
 

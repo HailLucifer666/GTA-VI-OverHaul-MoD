@@ -30,10 +30,13 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EntityOwnership.cs" />
     <Compile Include="GameKey.cs" />
+    <Compile Include="IEntityCleanupAdapter.cs" />
     <Compile Include="IGameContext.cs" />
     <Compile Include="IModModule.cs" />
     <Compile Include="INotificationService.cs" />
+    <Compile Include="IPersistenceStore.cs" />
     <Compile Include="IWeaponService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

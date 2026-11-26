@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassicGTA.Contracts", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassicGTA.Core", "src\ClassicGTA.Core\ClassicGTA.Core.csproj", "{11111111-1111-4111-8111-111111111102}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassicGTA.Infrastructure", "src\ClassicGTA.Infrastructure\ClassicGTA.Infrastructure.csproj", "{11111111-1111-4111-8111-111111111104}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassicGTA.Tests", "tests\ClassicGTA.Tests\ClassicGTA.Tests.csproj", "{11111111-1111-4111-8111-111111111103}"
 EndProject
 Global
@@ -22,6 +24,10 @@ Global
 		{11111111-1111-4111-8111-111111111102}.Debug|x64.Build.0 = Debug|x64
 		{11111111-1111-4111-8111-111111111102}.Release|x64.ActiveCfg = Release|x64
 		{11111111-1111-4111-8111-111111111102}.Release|x64.Build.0 = Release|x64
+		{11111111-1111-4111-8111-111111111104}.Debug|x64.ActiveCfg = Debug|x64
+		{11111111-1111-4111-8111-111111111104}.Debug|x64.Build.0 = Debug|x64
+		{11111111-1111-4111-8111-111111111104}.Release|x64.ActiveCfg = Release|x64
+		{11111111-1111-4111-8111-111111111104}.Release|x64.Build.0 = Release|x64
 		{11111111-1111-4111-8111-111111111103}.Debug|x64.ActiveCfg = Debug|x64
 		{11111111-1111-4111-8111-111111111103}.Debug|x64.Build.0 = Debug|x64
 		{11111111-1111-4111-8111-111111111103}.Release|x64.ActiveCfg = Release|x64

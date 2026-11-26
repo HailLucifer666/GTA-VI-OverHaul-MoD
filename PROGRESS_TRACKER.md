@@ -25,8 +25,8 @@
 | :---: | :--- | :---: | :--- | :--- |
 | **Phase 0** | Repo init, GitHub remote (`HailLucifer666/classic-gta-overhaul-mod`), install `Claude-Code-Dev-Studios` team locally, `nuget.config` (`E:\` only), `/kee` audit + Multi-LLM synthesis | **DONE** | `git remote -v` + `docs/` committed | N/A (setup) |
 | **Phase 1** | Solution scaffold (`Contracts`, `Core`, `Tests`) + **Module 1 (`WeaponAndZoneController`)** — Cut Feature `#19` + Safe-Zone/Interior restoration | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 12/12 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe A (`IsOnlineSession` removed) → `04_FastTick_InOnlineSession_NeverActs` FAIL<br>• Probe B (`gameTimeMs < _lastSlowTickMs` disabled) → `09_SlowTick_GameTimeWrapAround_DoesNotFreeze` FAIL<br>• Probe C (protagonist-switch reset removed) → `10_SlowTick_ProtagonistSwitch_ResetsTrackedWeapon` FAIL |
-| **Phase 2** | `ClassicGTA.Infrastructure` — 3-Tier Fault-Isolated Scheduler (`0ms/250ms/1000ms`), Three-Way Entity Ownership Registry (`Owned/Borrowed/Detached` + separate `Blip` tracker), Atomic Persistence (`temp -> 3x rotating backup -> replace` JSON + INI config) | **NEXT** | Pending | Pending |
-| **Phase 3** | **Module 2 (`EmergencyDispatchController`)** — Cut Feature `#25` (911 Police, Ambulance heal-on-arrival, Fire Truck) + arrival/timeout/cleanup FSM | **PENDING** | Pending | Pending |
+| **Phase 2** | `ClassicGTA.Infrastructure` — 3-Tier Fault-Isolated Scheduler (`0ms/250ms/1000ms`), Three-Way Entity Ownership Registry (`Owned/Borrowed/Detached` + separate `Blip` tracker + camera-restore-before-delete), Atomic Persistence (`temp -> 3x rotating backup -> replace` + throttled `SimpleIniConfig`) | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 24/24 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe D (scheduler isolation bypassed) → `13_Scheduler_IsolatesFaultingModuleAndKeepsSiblingRunning` FAIL<br>• Probe E (borrowed entity deleted) → `17_EntityRegistry_OwnedDeleted_BorrowedNeverTouched_DetachedReleased` FAIL<br>• Probe F (camera restore skipped before delete) → `19_EntityRegistry_RestoresCameraBeforeDeletingCamera` FAIL |
+| **Phase 3** | **Module 2 (`EmergencyDispatchController`)** — Cut Feature `#25` (911 Police, Ambulance heal-on-arrival, Fire Truck) + arrival/timeout/cleanup FSM | **NEXT** | Pending | Pending |
 | **Phase 4** | **Economy, Properties, Businesses, Vehicles & Stocks** — Cut Features `#1, #2, #3, #4, #5` (idempotent transactions, `OfflineCapDays = 7`, stock ticker + contract shocks) | **PENDING** | Pending | Pending |
 | **Phase 5** | **Side-Hustles, RPG Stats & Card Games** — Cut Features `#8, #9, #10, #15, #17 [SUB], #20` (Taxi 5-state FSM, Vigilante/Paramedic/Firefighter, Rampage timer/medals, RPG XP curves, Blackjack/Poker) | **PENDING** | Pending | Pending |
 | **Phase 6** | **GTA VI (PC) Adapter & Live Integration** (Gated by 6-Gate Policy after GTA VI PC + verified Script Hook VI launch) | **BLOCKED (Awaiting GTA VI PC)** | Pending | Pending |
@@ -35,7 +35,7 @@
 
 ## 3. Exact Resume Command for Next Session
 
-To start **Phase 2** in any new session or CLI:
-1. Run `.\build.ps1` and confirm Phase 1 is still **12/12 PASS**.
-2. Build `src\ClassicGTA.Infrastructure` (Fault-Isolated 3-Tier Scheduler, Three-Way Entity/Blip Registry, Atomic JSON Persistence with 3× rotating backups).
-3. Add Phase 2 tests to `tests\ClassicGTA.Tests`, run at least 3 sabotage probes (crash isolation, borrowed-entity protection, corrupt-temp-file rollback), restore to GREEN, update this tracker, and push to `origin/main`.
+To start **Phase 3** in any new session or CLI:
+1. Run `.\build.ps1` and confirm Phases 1–2 are still **24/24 PASS**.
+2. Build **Module 2 (`EmergencyDispatchController`)** in `src\ClassicGTA.Core\Module2\` (911 Police, Ambulance heal-on-arrival only, Fire Truck dispatch + arrival/timeout/cleanup FSM + entity/blip registration via `EntityOwnershipRegistry`).
+3. Add Phase 3 tests to `tests\ClassicGTA.Tests`, run at least 3 sabotage probes (Online block, heal-before-arrival guard, timeout cleanup leak), restore to GREEN, update this tracker, and push to `origin/main`.

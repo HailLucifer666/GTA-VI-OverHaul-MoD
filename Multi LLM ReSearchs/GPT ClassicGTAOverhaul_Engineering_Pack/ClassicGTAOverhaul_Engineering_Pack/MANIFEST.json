@@ -1,0 +1,26 @@
+{
+  "project": "Classic GTA Overhaul",
+  "version": "0.1.0",
+  "created": "2026-11-26",
+  "contents": [
+    "README.md",
+    "config/ClassicGTA.ini",
+    "docs/ADR/0001_ADAPTER_BOUNDARY.md",
+    "docs/AGENT_WORKFLOW.md",
+    "docs/ARCHITECTURE.md",
+    "docs/FEATURE_BACKLOG.md",
+    "docs/MVP.md",
+    "docs/PRD.md",
+    "docs/RED_TEAM_PROTOCOL.md",
+    "docs/REFERENCES.md",
+    "docs/ROADMAP.md",
+    "docs/SECURITY_AND_LEGAL.md",
+    "docs/SETUP_GTA5.md",
+    "docs/TECH_STACK.md",
+    "docs/TEST_PLAN.md",
+    "docs/modules/MODULE_01_POCKET_ARSENAL.md",
+    "src/ClassicGTA.GTA5/ClassicGTA.GTA5.csproj",
+    "src/ClassicGTA.GTA5/WeaponAndZoneUnlocker.cs"
+  ],
+  "note": "Planning and prototype source package. Source has not been compiled or tested in the user's GTA V installation."
+}

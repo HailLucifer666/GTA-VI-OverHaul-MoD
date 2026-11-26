@@ -1,0 +1,20 @@
+# Build outputs
+bin/
+obj/
+TestResults/
+*.log
+
+# Local NuGet packages (kept on E:\, never committed)
+.packages/
+packages/
+
+# Visual Studio user/cache files
+.vs/
+*.user
+*.suo
+*.cache
+*.pdb
+
+# OS clutter
+Thumbs.db
+Desktop.ini

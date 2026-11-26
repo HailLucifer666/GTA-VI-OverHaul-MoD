@@ -80,7 +80,20 @@ namespace ClassicGTA.Core.Module1
                 return;
             }
 
-            if (!IsSafeGameplayState())
+            if (_context.IsOnlineSession)
+            {
+                ResetStateForOnline();
+                return;
+            }
+
+            if (!IsSafeGameplayState() || _context.IsInVehicle)
+            {
+                return;
+            }
+
+            // I-03 Fix: Gate combat-control overrides strictly on being inside a restricted interior.
+            // Outdoors (interiorId == 0) must never override mission-disabled controls.
+            if (!_wasInInterior && _weapons.GetPlayerInteriorId() == 0)
             {
                 return;
             }
@@ -93,6 +106,14 @@ namespace ClassicGTA.Core.Module1
         {
             if (!_isRunning || !_isEnabled)
             {
+                return;
+            }
+
+            if (_context.IsOnlineSession)
+            {
+                // I-03 Fix: Immediately clear local interior/weapon tracking on SP->Online transition
+                // without invoking gameplay natives in Online.
+                ResetStateForOnline();
                 return;
             }
 
@@ -156,7 +177,14 @@ namespace ClassicGTA.Core.Module1
             }
 
             uint previousWeapon = _weapons.CurrentWeaponId;
-            _weapons.SetCanEquipAllWeapons(true);
+            bool inInteriorNow = _weapons.GetPlayerInteriorId() != 0;
+
+            // I-03 Fix: Separate Pocket Arsenal from the interior zone equip flag.
+            // Never leave SetCanEquipAllWeapons(true) set outdoors after F10.
+            if (inInteriorNow && _zoneRestoreEnabled)
+            {
+                _weapons.SetCanEquipAllWeapons(true);
+            }
 
             HashSet<uint> seen = new HashSet<uint>();
             int grantedCount = 0;
@@ -182,6 +210,13 @@ namespace ClassicGTA.Core.Module1
             _notifications.Show("Classic GTA: Pocket Arsenal granted (" + grantedCount + " weapons).");
             _notifications.Log("[Module1] POCKET_ARSENAL granted=" + grantedCount);
             return grantedCount;
+        }
+
+        private void ResetStateForOnline()
+        {
+            _wasInInterior = false;
+            _interiorRestoreRetriesRemaining = 0;
+            _lastEquippedWeaponId = _weapons.UnarmedWeaponId;
         }
 
         public void Stop()

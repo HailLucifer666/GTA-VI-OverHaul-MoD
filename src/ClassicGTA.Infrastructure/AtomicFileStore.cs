@@ -30,6 +30,11 @@ namespace ClassicGTA.Infrastructure
 
         public void Save(string fileName, string content)
         {
+            Save(fileName, content, null);
+        }
+
+        public void Save(string fileName, string content, Func<string, bool> existingBackupValidator)
+        {
             if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name required.", "fileName");
             if (string.IsNullOrWhiteSpace(content)) throw new ArgumentException("Refusing to persist empty content.", "content");
 
@@ -52,8 +57,37 @@ namespace ClassicGTA.Infrastructure
 
                     if (File.Exists(targetPath))
                     {
-                        RotateBackups(targetPath);
-                        AtomicCopyFile(targetPath, targetPath + ".bak1");
+                        bool canRotateExisting = true;
+                        if (existingBackupValidator != null)
+                        {
+                            try
+                            {
+                                var info = new FileInfo(targetPath);
+                                if (info.Length > MaxReadBytes)
+                                {
+                                    canRotateExisting = false;
+                                }
+                                else
+                                {
+                                    string existingText = File.ReadAllText(targetPath, Encoding.UTF8);
+                                    canRotateExisting = existingBackupValidator(existingText);
+                                }
+                            }
+                            catch
+                            {
+                                canRotateExisting = false;
+                            }
+                        }
+
+                        if (canRotateExisting)
+                        {
+                            RotateBackups(targetPath);
+                            AtomicCopyFile(targetPath, targetPath + ".bak1");
+                        }
+                        else
+                        {
+                            _logger.Log("[AtomicFileStore] Skipped rotating invalid primary " + Path.GetFileName(targetPath) + " into .bak1.");
+                        }
                         File.Replace(tempPath, targetPath, null, true);
                     }
                     else
@@ -68,6 +102,21 @@ namespace ClassicGTA.Infrastructure
                         try { File.Delete(tempPath); } catch { /* best effort cleanup */ }
                     }
                 }
+            }
+        }
+
+        public bool Exists(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return false;
+            lock (_sync)
+            {
+                string targetPath = Path.Combine(_baseDirectory, Path.GetFileName(fileName));
+                if (File.Exists(targetPath)) return true;
+                for (int i = 1; i <= MaxBackups; i++)
+                {
+                    if (File.Exists(targetPath + ".bak" + i)) return true;
+                }
+                return false;
             }
         }
 

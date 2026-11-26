@@ -4,7 +4,7 @@
 
 **Repository:** `https://github.com/HailLucifer666/classic-gta-overhaul-mod` (private)
 **Workspace Root:** `E:\Classic GTA overhaul mod for PC`
-**Last Updated:** `2026-11-26`
+**Last Updated:** `2026-11-27`
 **Dev Team Installed Locally:** `.zcode/`, `.claude/`, `AGENTS.md`, `TEAM-USAGE.md` (from `E:\WIFI Hack\Claude-Code-Dev-Studios`)
 
 ---
@@ -32,17 +32,18 @@
 | **Phase 5B** | **Emergency Side-Jobs, First-Person Camera & Friend Hangouts** — Cut Features `#9, #18, #24` (12-level Vigilante/Paramedic/Firefighter, `±75°` pitch-clamped FPS camera, Companion AI) | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 70/70 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe P (borrowed emergency vehicle tracked Owned) → `60_EmergencyJobs_ExitingVehicleAbortsWithoutDeletingBorrowedVehicle` FAIL<br>• Probe Q (FPS pitch clamp removed) → `63_FirstPerson_ToggleClampsPitchToPlusMinus75AndSyncsHeadingOnFoot` FAIL<br>• Probe R (dismissed companion deleted instead of released) → `67_Companion_CallFollowCombatAssistAndNaturalDismiss` FAIL |
 | **Phase 5C** | **Guard Dogs (`#26`), Home Furnishing Store (`#7`) & ClassicNet Web Hub (`#6 [SUB]`)** — remaining offline-buildable pure-C# modules | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 82/82 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe S (unowned pet breed summoned) → `71_Pet_CannotSummonUnownedBreed_BuyThenSummonAndCommand` FAIL<br>• Probe T (out-of-bounds furniture placement) → `76_Decorator_RejectsOutOfBoundsAndUnownedSafehouse` FAIL<br>• Probe U (missing furniture refund on persist fail) → `77_Decorator_PersistFailureRefundsAndRollsBack` FAIL |
 | **Phase 6A** | **`ClassicGTA.Adapter.GTAV` (GTA V Legacy Prototype — Compile-Only)** — Compiled against `ScriptHookVDotNet3 3.6.0` + `LemonUI.SHVDN3 2.2.0` (`E:\.packages\`, `Private=False`); wires 6 `F7` submenus (Weapons/Zone, 911 Dispatch, Taxi, Emergency Jobs, Properties/Businesses/Kraken Summon/Stocks, Blackjack, Friends/Guard Dogs) | **DONE (Compile-Only)** | `.\build.ps1` → **0 Errors, 0 Warnings** (`2026-11-26`); not yet live-tested in-game | Zero `ScriptHookVDotNet3.dll` leakage into `bin\Release\` |
-| **Phase 6A-Harden (Pass 1 & 2)** | **Hardening Passes (`v0.6.1` + `v0.6.2`)** — Closed `R-1`, `H-01`, `C-2`, `C-4`, `C-6`, `C-7`, `C-9`, `C-10`, `H-02` (5/5 sites), `H-03`, `R-4/V-11`, `R-5`, `R-14/V-19`, `S-06/V-04/V-13`, `S-08`, `S-10/V-18`, `S-11`, `S-12/V-12`, `V-14`, `V-16`, `V-20/V-21`. **Explicitly still OPEN until Phase 6B:** `C-1` (global Story Mode ledger, not per-savegame isolated) & `C-3` (adapter is compile-only, zero adapter unit tests) | **DONE (Known Open: C-1, C-3)** | `.\build.ps1` → **0 Errors, 0 Warnings, 98/98 PASS** (`2026-11-27`) | **`.\probe.ps1` (green baseline + exact literal `[FAIL]` prefix match: 6/6 RED → 98/98 GREEN)** |
-| **Phase 6B** | **Live GTA V Legacy In-Game Deploy & Measurement** — Deploy built DLLs + `LemonUI.SHVDN3.dll` to `GTA V Legacy\scripts\` once download finishes, verify `GTA5.exe` build + ScriptHookV/SHVDN3 runtime, and run Measurement Protocol | **NEXT (Awaiting GTA V Legacy Download)** | Pending (game downloading) | Pending |
+| **Phase 6A-Harden (Pass 1 & 2)** | **Hardening Passes (`v0.6.1` + `v0.6.2`)** — Closed `R-1`, `H-01`, `C-2`, `C-4`, `C-6`, `C-7`, `C-9`, `C-10`, `H-02` (5/5 sites), `H-03`, `R-4/V-11`, `R-5`, `R-14/V-19`, `S-06/V-04/V-13`, `S-08`, `S-10/V-18`, `S-11`, `S-12/V-12`, `V-14`, `V-16`, `V-20/V-21`. | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 98/98 PASS** (`2026-11-27`) | `.\probe.ps1` (6/6 RED → 98/98 GREEN) |
+| **Phase 6A-Harden (Pass 3 / `v0.6.3`)** | **Master Review Closure (`C-01`, `C-02`, `I-01`–`I-09`, `A-01`–`A-04`)** — Per-slot atomic `ModWalletEconomyService` + `AssetOwnershipEngine` + legacy v0.6.0 migration, pure UTC income clock + purchase baseline, interior-gated `WeaponAndZoneController`, strict `PersistenceCodec` + validated backup rotation across all 7 engines, `VoidedOnline` Blackjack refund, `ClassicGTAHostController` adapter seam referenced directly by `ClassicGTA.Tests`, `UiLoopGuard` circuit breaker, `KrakenDeliveryController` water+cap=1, `RoadSpawnValidator` + `FireExtinguishEvaluator`, taxi pickup retry/timeout, stock tick persistence, online log-once guard, SHA-256 package pins. | **DONE (Offline Verified)** | `.\build.ps1` → **0 Errors, 0 Warnings, 116/116 PASS** (`2026-11-27`) | **`.\probe.ps1` (12/12 RED → 116/116 GREEN)** |
+| **Phase 6B** | **Live GTA V Legacy In-Game Deploy & Measurement (`A-07`)** — Deploy built DLLs + `LemonUI.SHVDN3.dll` to `GTA V Legacy\scripts\` once download finishes, verify `GTA5.exe` build + ScriptHookV/SHVDN3 runtime, and capture live Measurement Protocol artifact (30 hot-reloads, 30-min soak, entity high-water, frame time). | **NEXT (Awaiting GTA V Legacy Download)** | Pending (game downloading) | Pending |
 
 ---
 
 ## 3. Exact Resume Command for Next Session
 
-**ALL offline-buildable Core & Infrastructure phases (Phases 0–5C) are 100% COMPLETE: 82/82 tests PASS, 21/21 sabotage probes (A–U) confirmed RED → restored GREEN, 17 of 26 cut features implemented in pure C#.**
+**All offline-verifiable Core, Infrastructure, and Adapter-Seam hardening (Phases 0–6A Pass 3) are COMPLETE: `116/116` unique tests PASS (`0 Errors, 0 Warnings`), `12/12` scripted `/kee` sabotage probes confirmed RED → restored GREEN.**
 
-To start **Phase 6** once your game download finishes (in any new session or CLI):
-1. Run `.\build.ps1` and confirm Phases 1–5C are still **82/82 PASS**.
-2. Check which game + edition finished installing (Legacy vs. Enhanced if GTA V, or GTA VI PC post-launch) and verify exact `GTA*.exe` product version before downloading matching ScriptHook / SHVDN3 binaries into `E:\`.
-3. Build the thin Engine Adapter (`src\ClassicGTA.Adapter.*`) wiring our 14 verified `ClassicGTA.Contracts` interfaces (`IGameContext`, `IWeaponService`, `IEntityCleanupAdapter`, `IEmergencyDispatchAdapter`, `IEconomyService`, `ITaxiAdapter`, `IEmergencySideJobAdapter`, `IFirstPersonCameraAdapter`, `ICompanionAdapter`, `IPetAdapter`, `INotificationService`) without modifying `ClassicGTA.Core`.
-4. Run the in-game Measurement Protocol (`[RESTORE]` telemetry logs, 30 consecutive hot-reloads, 30-minute soak test, zero entity/blip leaks).
+To start **Phase 6B (Live GTA V Legacy Verification)** once your game download finishes:
+1. Run `.\build.ps1` and confirm **116/116 PASS** (`0 Errors, 0 Warnings`) and SHA-256 package integrity check green.
+2. Verify installed `GTA5.exe` Legacy product version and install matching `ScriptHookV` + `ScriptHookVDotNet3` in the GTA V root folder.
+3. Deploy via `msbuild /p:GTA5Dir="<path>"` (copies `ClassicGTA.GTAV.dll`, `ClassicGTA.Contracts.dll`, `ClassicGTA.Core.dll`, `ClassicGTA.Infrastructure.dll`, and `LemonUI.SHVDN3.dll` into `scripts\`; excludes `ScriptHookVDotNet3.dll`).
+4. Run the live in-game Measurement Protocol (`[RESTORE]` telemetry logs, save/load wallet+asset check, Online-transition check, 30 consecutive hot-reloads, 30-minute soak test, zero entity/blip leaks) and record the versioned evidence artifact before applying any runtime known-good tag.

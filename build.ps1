@@ -11,7 +11,7 @@ $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $pkgDir = Join-Path $RepoRoot ".packages"
 New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
 
-function Ensure-NuGetPackage($id, $version, $expectedDllRelative) {
+function Ensure-NuGetPackage($id, $version, $expectedDllRelative, $expectedDllSha256) {
     $destDir = Join-Path $pkgDir "$id.$version"
     $expectedDll = Join-Path $destDir $expectedDllRelative
     if (-not (Test-Path $expectedDll)) {
@@ -19,14 +19,23 @@ function Ensure-NuGetPackage($id, $version, $expectedDllRelative) {
         $url = "https://api.nuget.org/v3-flatcontainer/$lower/$version/$lower.$version.nupkg"
         $zipPath = Join-Path $pkgDir "$id.$version.zip"
         Write-Host "Restoring $id $version into .\.packages\ ..." -ForegroundColor Yellow
-        Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
+        Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing -TimeoutSec 30
         Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
         Remove-Item $zipPath -Force
     }
+
+    # A-04 Fix: Verify pinned SHA-256 integrity of every restored package assembly before building.
+    if (-not (Test-Path $expectedDll)) {
+        throw "Package integrity error: missing expected assembly $expectedDll"
+    }
+    $actualHash = (Get-FileHash -Path $expectedDll -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($actualHash -ne $expectedDllSha256.ToUpperInvariant()) {
+        throw "SHA-256 integrity mismatch for $id $version ($expectedDllRelative)! Expected=$expectedDllSha256 Actual=$actualHash"
+    }
 }
 
-Ensure-NuGetPackage "ScriptHookVDotNet3" "3.6.0" "lib\net48\ScriptHookVDotNet3.dll"
-Ensure-NuGetPackage "LemonUI.SHVDN3" "2.2.0" "lib\net48\LemonUI.SHVDN3.dll"
+Ensure-NuGetPackage "ScriptHookVDotNet3" "3.6.0" "lib\net48\ScriptHookVDotNet3.dll" "F328A36445C1D3E282E70B2791EFC0D516AE3009D0D1461BF076893805A01CD9"
+Ensure-NuGetPackage "LemonUI.SHVDN3" "2.2.0" "lib\net48\LemonUI.SHVDN3.dll" "B52EF80136152ED7AFDF335BD4FF16183977C8E27223AAF5C94A8C16E62E1AEB"
 
 # 2. Locate Roslyn-capable MSBuild (honors MSBUILD_PATH override, vswhere, or known VS installs)
 $msbuildCandidates = @()

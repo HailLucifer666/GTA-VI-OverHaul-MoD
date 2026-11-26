@@ -1,0 +1,102 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using ClassicGTA.Contracts;
+
+namespace ClassicGTA.Core.Activities
+{
+    /// <summary>
+    /// RPG Character Skill Bars (Cut Feature #20 — Stamina, Driving, Flying, Shooting, LungCapacity).
+    /// Levels 0..100 with 100 XP per level, persisted atomically and exposing tangible perk multipliers.
+    /// </summary>
+    public sealed class RpgSkillEngine
+    {
+        private const string SaveFileName = "ClassicGTA_Skills.dat";
+        private const string SchemaHeader = "SKILLS_SCHEMA=1";
+        private const int MaxLevel = 100;
+        private const int XpPerLevel = 100;
+
+        private readonly IGameContext _context;
+        private readonly IPersistenceStore _store;
+        private readonly Dictionary<RpgSkillType, int> _totalXp = new Dictionary<RpgSkillType, int>();
+
+        public RpgSkillEngine(IGameContext context, IPersistenceStore store)
+        {
+            if (context == null) throw new ArgumentNullException("context");
+            if (store == null) throw new ArgumentNullException("store");
+
+            _context = context;
+            _store = store;
+
+            foreach (RpgSkillType skill in Enum.GetValues(typeof(RpgSkillType)))
+            {
+                _totalXp[skill] = 0;
+            }
+        }
+
+        public int GetLevel(RpgSkillType skill)
+        {
+            int level = _totalXp[skill] / XpPerLevel;
+            return level > MaxLevel ? MaxLevel : level;
+        }
+
+        public int AddXp(RpgSkillType skill, int xpAmount)
+        {
+            if (_context.IsOnlineSession) return GetLevel(skill);
+            if (xpAmount <= 0) throw new ArgumentOutOfRangeException("xpAmount", "XP must be positive.");
+
+            int maxTotalXp = MaxLevel * XpPerLevel;
+            long next = (long)_totalXp[skill] + xpAmount;
+            _totalXp[skill] = next > maxTotalXp ? maxTotalXp : (int)next;
+            return GetLevel(skill);
+        }
+
+        /// <summary>Returns 1.0x at level 0 up to 2.0x at level 100.</summary>
+        public float GetStaminaRegenMultiplier()
+        {
+            return 1.0f + (GetLevel(RpgSkillType.Stamina) / 100.0f);
+        }
+
+        /// <summary>Returns 0% recoil reduction at level 0 up to 35% at level 100.</summary>
+        public int GetWeaponRecoilReductionPercent()
+        {
+            return (GetLevel(RpgSkillType.Shooting) * 35) / 100;
+        }
+
+        public void SaveState()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(SchemaHeader);
+            foreach (var kv in _totalXp)
+            {
+                sb.Append((int)kv.Key).Append('|').AppendLine(kv.Value.ToString());
+            }
+            _store.Save(SaveFileName, sb.ToString());
+        }
+
+        public bool LoadState()
+        {
+            string raw;
+            if (!_store.TryLoad(SaveFileName, s => !string.IsNullOrWhiteSpace(s) && s.StartsWith(SchemaHeader, StringComparison.Ordinal), out raw))
+            {
+                return false;
+            }
+
+            string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Trim().Split('|');
+                int skillInt; int xp;
+                if (parts.Length == 2 && int.TryParse(parts[0], out skillInt) && int.TryParse(parts[1], out xp))
+                {
+                    if (Enum.IsDefined(typeof(RpgSkillType), skillInt))
+                    {
+                        int maxXp = MaxLevel * XpPerLevel;
+                        _totalXp[(RpgSkillType)skillInt] = xp < 0 ? 0 : (xp > maxXp ? maxXp : xp);
+                    }
+                }
+            }
+            return true;
+        }
+    }
+}

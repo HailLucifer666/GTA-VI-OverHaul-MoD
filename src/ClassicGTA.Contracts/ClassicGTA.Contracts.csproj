@@ -44,8 +44,11 @@
     <Compile Include="IModModule.cs" />
     <Compile Include="INotificationService.cs" />
     <Compile Include="IPersistenceStore.cs" />
+    <Compile Include="ITaxiAdapter.cs" />
     <Compile Include="IWeaponService.cs" />
+    <Compile Include="MedalRating.cs" />
     <Compile Include="PurchaseResult.cs" />
+    <Compile Include="RpgSkillType.cs" />
     <Compile Include="WorldPoint.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -14,6 +14,7 @@ namespace ClassicGTA.Infrastructure
     public sealed class AtomicFileStore : IPersistenceStore
     {
         private const int MaxBackups = 3;
+        private const long MaxReadBytes = 4 * 1024 * 1024; // 4 MB safety cap
         private readonly string _baseDirectory;
         private readonly INotificationService _logger;
         private readonly object _sync = new object();
@@ -52,7 +53,7 @@ namespace ClassicGTA.Infrastructure
                     if (File.Exists(targetPath))
                     {
                         RotateBackups(targetPath);
-                        File.Copy(targetPath, targetPath + ".bak1", true);
+                        AtomicCopyFile(targetPath, targetPath + ".bak1");
                         File.Replace(tempPath, targetPath, null, true);
                     }
                     else
@@ -92,6 +93,12 @@ namespace ClassicGTA.Infrastructure
 
                     try
                     {
+                        var info = new FileInfo(path);
+                        if (info.Length > MaxReadBytes)
+                        {
+                            _logger.Log("[AtomicFileStore] Skipped oversized file " + Path.GetFileName(path));
+                            continue;
+                        }
                         string text = File.ReadAllText(path, Encoding.UTF8);
                         if (validator == null || validator(text))
                         {
@@ -121,7 +128,31 @@ namespace ClassicGTA.Infrastructure
                 string next = targetPath + ".bak" + i;
                 if (File.Exists(prev))
                 {
-                    File.Copy(prev, next, true);
+                    AtomicCopyFile(prev, next);
+                }
+            }
+        }
+
+        private static void AtomicCopyFile(string sourcePath, string destinationPath)
+        {
+            string tmp = destinationPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.Copy(sourcePath, tmp, true);
+                if (File.Exists(destinationPath))
+                {
+                    File.Replace(tmp, destinationPath, null, true);
+                }
+                else
+                {
+                    File.Move(tmp, destinationPath);
+                }
+            }
+            finally
+            {
+                if (File.Exists(tmp))
+                {
+                    try { File.Delete(tmp); } catch { }
                 }
             }
         }

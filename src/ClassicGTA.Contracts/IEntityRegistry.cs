@@ -9,5 +9,8 @@ namespace ClassicGTA.Contracts
         void TrackBlip(int blipHandle, string ownerModuleId);
         void TrackCamera(int cameraHandle, string ownerModuleId);
         void CleanupOwner(string ownerModuleId, bool releaseOwnedInsteadOfDelete = false);
+        void DropAllWithoutDeleting();
+        void DeleteUntrackedEntity(int handle);
+        void DeleteUntrackedBlip(int blipHandle);
     }
 }

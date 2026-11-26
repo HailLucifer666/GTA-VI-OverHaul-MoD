@@ -107,7 +107,15 @@ namespace ClassicGTA.Core.Activities
         public void SlowTick(int gameTimeMs)
         {
             if (!_isRunning || !_isEnabled || _state == TaxiState.Idle) return;
-            if (_context.IsOnlineSession || !_context.IsPlayerReady || _context.IsPaused || _context.IsInCutscene) return;
+            if (_context.IsOnlineSession)
+            {
+                // S-06/S-07 Fix: On SP->Online transition, drop stale handles without deleting recycled Online entities.
+                _registry.DropAllWithoutDeleting();
+                _taxiVehicleHandle = 0; _farePedHandle = 0; _blipHandle = 0;
+                _state = TaxiState.Idle;
+                return;
+            }
+            if (!_context.IsPlayerReady || _context.IsPaused || _context.IsInCutscene) return;
 
             int currentTaxi;
             if (!_adapter.IsPlayerInTaxi(out currentTaxi) || currentTaxi != _taxiVehicleHandle)
@@ -170,6 +178,9 @@ namespace ClassicGTA.Core.Activities
 
             if (!_registry.TryTrackEntity(ped, ModuleId, EntityOwnership.Owned))
             {
+                // H-02 Fix: Immediately delete untracked fare ped & blip on budget refusal.
+                _registry.DeleteUntrackedEntity(ped);
+                _registry.DeleteUntrackedBlip(blip);
                 AbortShift("EntityBudgetExceeded");
                 return;
             }

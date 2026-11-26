@@ -19,6 +19,15 @@ packages/
 Thumbs.db
 Desktop.ini
 
-# Local research & artwork (kept on disk, excluded from git)
+# Local research, reviews & artwork (kept on disk, excluded from git)
 Assets/
 Multi LLM ReSearchs/
+production/
+ClassicGTA_Data/
+
+# Secrets & IDE clutter
+*.env
+*.key
+*.pem
+.vscode/
+.idea/

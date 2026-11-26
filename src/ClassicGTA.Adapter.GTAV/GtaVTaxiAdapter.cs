@@ -58,11 +58,13 @@ namespace ClassicGTA.Adapter.GTAV
                 pickupPos.Y + (float)Math.Sin(angle2) * 650f,
                 pickupPos.Z);
             Vector3 dropPos = World.GetNextPositionOnStreet(dropRaw);
+            if (pickupPos.LengthSquared() <= 1f || dropPos.LengthSquared() <= 1f) return false;
 
             var pedModel = new Model(PedHash.Business01AMM);
             Ped fare = World.CreatePed(pedModel, pickupPos);
             pedModel.MarkAsNoLongerNeeded();
             if (fare == null || !fare.Exists()) return false;
+            fare.IsPersistent = true;
 
             Blip blip = World.CreateBlip(pickupPos);
             if (blip != null && blip.Exists())

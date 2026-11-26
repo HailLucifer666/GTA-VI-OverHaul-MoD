@@ -47,6 +47,7 @@
     <Compile Include="ActivitiesTests.cs" />
     <Compile Include="EconomyTests.cs" />
     <Compile Include="Fakes.cs" />
+    <Compile Include="HardenRegressionTests.cs" />
     <Compile Include="InfrastructureTests.cs" />
     <Compile Include="Module2Tests.cs" />
     <Compile Include="Phase5BTests.cs" />

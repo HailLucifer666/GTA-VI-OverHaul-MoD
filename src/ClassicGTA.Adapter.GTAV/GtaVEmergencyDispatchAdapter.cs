@@ -8,6 +8,7 @@ namespace ClassicGTA.Adapter.GTAV
     internal sealed class GtaVEmergencyDispatchAdapter : IEmergencyDispatchAdapter
     {
         private const ulong HashStopFireInRange = 0x056A8A219B8E829FUL;
+        private readonly System.Random _rng = new System.Random();
 
         public WorldPoint GetPlayerPosition()
         {
@@ -17,10 +18,27 @@ namespace ClassicGTA.Adapter.GTAV
 
         public bool TryFindRoadSpawnPoint(WorldPoint target, float minDistance, float maxDistance, out WorldPoint spawnPoint)
         {
-            Vector3 offset = new Vector3(target.X + minDistance, target.Y + (minDistance * 0.5f), target.Z);
-            Vector3 roadPos = World.GetNextPositionOnStreet(offset);
-            spawnPoint = new WorldPoint(roadPos.X, roadPos.Y, roadPos.Z);
-            return roadPos.LengthSquared() > 1f;
+            spawnPoint = new WorldPoint();
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                double angle = _rng.NextDouble() * System.Math.PI * 2.0;
+                float dist = minDistance + (float)(_rng.NextDouble() * (maxDistance - minDistance) * 0.5);
+                Vector3 offset = new Vector3(
+                    target.X + (float)(System.Math.Cos(angle) * dist),
+                    target.Y + (float)(System.Math.Sin(angle) * dist),
+                    target.Z);
+                Vector3 roadPos = World.GetNextPositionOnStreet(offset);
+                if (roadPos.LengthSquared() <= 1f) continue;
+
+                var candidate = new WorldPoint(roadPos.X, roadPos.Y, roadPos.Z);
+                float actualDist = candidate.DistanceTo(target);
+                if (actualDist >= minDistance * 0.5f && actualDist <= maxDistance)
+                {
+                    spawnPoint = candidate;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public DispatchSpawnResult SpawnUnit(EmergencyServiceType service, WorldPoint spawnPoint)

@@ -7,6 +7,7 @@ namespace ClassicGTA.Adapter.GTAV
     internal sealed class GtaVGameContext : IGameContext
     {
         private const ulong HashNetworkIsSessionStarted = 0x9DE624D2FC4B603FUL;
+        private const ulong HashNetworkIsInSession = 0xCA97246103B63917UL;
 
         public bool IsPlayerReady
         {
@@ -32,7 +33,19 @@ namespace ClassicGTA.Adapter.GTAV
 
         public bool IsOnlineSession
         {
-            get { return Function.Call<bool>((Hash)HashNetworkIsSessionStarted); }
+            get
+            {
+                try
+                {
+                    return Function.Call<bool>((Hash)HashNetworkIsSessionStarted) ||
+                           Function.Call<bool>((Hash)HashNetworkIsInSession);
+                }
+                catch
+                {
+                    // S-08 Fix: Fail closed — if session state cannot be determined, treat as Online.
+                    return true;
+                }
+            }
         }
 
         public bool IsInVehicle

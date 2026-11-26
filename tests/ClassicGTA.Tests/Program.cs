@@ -35,6 +35,15 @@ namespace ClassicGTA.Tests
             tests.AddRange(ActivitiesTests.GetAll());
             tests.AddRange(Phase5BTests.GetAll());
             tests.AddRange(Phase5CTests.GetAll());
+            tests.AddRange(HardenRegressionTests.GetAll());
+
+            // T-10 Fix: Enforce minimum test count so silently dropped tests fail the gate.
+            const int expectedMinTests = 94;
+            if (tests.Count < expectedMinTests)
+            {
+                Console.WriteLine("[FAIL] Test-count guard tripped: expected at least " + expectedMinTests + ", found " + tests.Count);
+                return 1;
+            }
 
             int passed = 0;
             int failed = 0;
@@ -174,6 +183,7 @@ namespace ClassicGTA.Tests
         {
             FakeGameContext ctx; FakeWeaponService weapons; FakeNotificationService notify;
             var mod = CreateController(out ctx, out weapons, out notify);
+            weapons.InteriorId = 42;
 
             mod.SlowTick(1000);
             mod.SlowTick(1100); // 100ms < 200ms threshold
@@ -187,6 +197,7 @@ namespace ClassicGTA.Tests
         {
             FakeGameContext ctx; FakeWeaponService weapons; FakeNotificationService notify;
             var mod = CreateController(out ctx, out weapons, out notify);
+            weapons.InteriorId = 42;
 
             mod.SlowTick(50000);
             // Save load resets GameTime back to 100ms

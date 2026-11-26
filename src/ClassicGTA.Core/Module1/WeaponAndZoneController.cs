@@ -23,6 +23,7 @@ namespace ClassicGTA.Core.Module1
         private int _trackedPlayerHandle;
         private uint _lastEquippedWeaponId;
         private bool _wasInInterior;
+        private int _interiorRestoreRetriesRemaining;
 
         public string ModuleId { get { return "classic.module1.weapons"; } }
         public string DisplayName { get { return "Weapon & Safe-Zone Restoration"; } }
@@ -179,6 +180,11 @@ namespace ClassicGTA.Core.Module1
         public void Stop()
         {
             _isRunning = false;
+            if (_wasInInterior)
+            {
+                _weapons.SetCanEquipAllWeapons(false);
+                _wasInInterior = false;
+            }
             // Never remove player weapons on Stop/Dispose; player may have earned or modified them.
             _notifications.Log("[Module1] Stopped.");
         }
@@ -223,26 +229,43 @@ namespace ClassicGTA.Core.Module1
                 _trackedPlayerHandle = currentHandle;
                 _lastEquippedWeaponId = _weapons.UnarmedWeaponId;
                 _wasInInterior = false;
+                _interiorRestoreRetriesRemaining = 0;
             }
         }
 
         private void ProcessInteriorRestoration(int gameTimeMs)
         {
-            _weapons.SetCanEquipAllWeapons(true);
-
             int interiorId = _weapons.GetPlayerInteriorId();
             bool inInterior = interiorId != 0;
             uint current = _weapons.CurrentWeaponId;
+
+            if (inInterior && !_wasInInterior)
+            {
+                // R-4 Fix: Arm a multi-tick restore window so delayed interior weapon strips (tick N+1) are caught.
+                _interiorRestoreRetriesRemaining = 8;
+            }
+            else if (!inInterior && _wasInInterior)
+            {
+                _interiorRestoreRetriesRemaining = 0;
+                _weapons.SetCanEquipAllWeapons(false);
+            }
+
+            if (inInterior)
+            {
+                _weapons.SetCanEquipAllWeapons(true);
+            }
 
             if (current != _weapons.UnarmedWeaponId)
             {
                 _lastEquippedWeaponId = current;
             }
-            else if (inInterior && !_wasInInterior && _lastEquippedWeaponId != _weapons.UnarmedWeaponId)
+            else if (inInterior && _interiorRestoreRetriesRemaining > 0 && _lastEquippedWeaponId != _weapons.UnarmedWeaponId)
             {
+                _interiorRestoreRetriesRemaining--;
                 if (_weapons.HasWeapon(_lastEquippedWeaponId))
                 {
                     bool selected = _weapons.SelectWeapon(_lastEquippedWeaponId);
+                    _interiorRestoreRetriesRemaining = 0;
                     _notifications.Log(
                         "[RESTORE] t=" + gameTimeMs +
                         " ped=" + _trackedPlayerHandle +

@@ -7,19 +7,21 @@ namespace ClassicGTA.Core.Economy
 {
     /// <summary>
     /// Manages Safehouses (#1), Passive-Income Businesses (#2), Boats/Planes/Helicopters (#3),
-    /// and Submarines (#4) using stable ContentId keys, idempotent refund-on-failure purchases,
-    /// and elapsed in-game day passive income capped at OfflineCapDays.
+    /// and Submarines (#4) using stable ContentId keys, save-slot isolation, idempotent refund-on-failure
+    /// purchases, and monotonic cross-restart passive income capped at OfflineCapDays.
     /// </summary>
     public sealed class AssetOwnershipEngine
     {
         private const string SaveFileName = "ClassicGTA_Assets.dat";
         private const string SchemaHeader = "SCHEMA=1";
+        private const string SchemaFooter = "END_OF_FILE";
 
         private readonly IGameContext _context;
         private readonly IEconomyService _economy;
         private readonly IPersistenceStore _store;
         private readonly INotificationService _notifications;
         private readonly int _offlineCapDays;
+        private readonly string _slotFingerprint;
 
         private readonly Dictionary<string, AssetDefinition> _catalog =
             new Dictionary<string, AssetDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -31,13 +33,15 @@ namespace ClassicGTA.Core.Economy
         private int _lastPayoutInGameDay;
 
         public int OwnedCount { get { return _ownedIds.Count; } }
+        public string SlotFingerprint { get { return _slotFingerprint; } }
 
         public AssetOwnershipEngine(
             IGameContext context,
             IEconomyService economy,
             IPersistenceStore store,
             INotificationService notifications,
-            int offlineCapDays = 7)
+            int offlineCapDays = 7,
+            string slotFingerprint = "default")
         {
             if (context == null) throw new ArgumentNullException("context");
             if (economy == null) throw new ArgumentNullException("economy");
@@ -50,6 +54,7 @@ namespace ClassicGTA.Core.Economy
             _store = store;
             _notifications = notifications;
             _offlineCapDays = offlineCapDays;
+            _slotFingerprint = string.IsNullOrWhiteSpace(slotFingerprint) ? "default" : slotFingerprint.Trim();
         }
 
         public void RegisterAsset(AssetDefinition asset)
@@ -75,21 +80,26 @@ namespace ClassicGTA.Core.Economy
                 return false;
             }
 
-            _ownedIds.Clear();
-            _hasLastPayoutDay = false;
-            _lastPayoutInGameDay = 0;
+            string loadedSlot = "default";
+            var loadedOwned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool hasDay = false;
+            int loadedDay = 0;
 
             string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i].Trim();
-                if (line.StartsWith("LAST_DAY=", StringComparison.Ordinal))
+                if (line.StartsWith("SLOT=", StringComparison.Ordinal))
+                {
+                    loadedSlot = line.Substring("SLOT=".Length).Trim();
+                }
+                else if (line.StartsWith("LAST_DAY=", StringComparison.Ordinal))
                 {
                     int day;
                     if (int.TryParse(line.Substring("LAST_DAY=".Length), out day))
                     {
-                        _hasLastPayoutDay = true;
-                        _lastPayoutInGameDay = day;
+                        hasDay = true;
+                        loadedDay = day;
                     }
                 }
                 else if (line.StartsWith("OWNED=", StringComparison.Ordinal))
@@ -97,11 +107,22 @@ namespace ClassicGTA.Core.Economy
                     string id = line.Substring("OWNED=".Length).Trim();
                     if (id.Length > 0 && _catalog.ContainsKey(id))
                     {
-                        _ownedIds.Add(id);
+                        loadedOwned.Add(id);
                     }
                 }
             }
 
+            // C-1 Fix: Refuse to load ledger written under a different save-slot fingerprint.
+            if (!string.Equals(loadedSlot, _slotFingerprint, StringComparison.OrdinalIgnoreCase))
+            {
+                _notifications.Log("[Assets] Save-slot mismatch (file=" + loadedSlot + " current=" + _slotFingerprint + "); starting clean.");
+                return false;
+            }
+
+            _ownedIds.Clear();
+            foreach (string id in loadedOwned) _ownedIds.Add(id);
+            _hasLastPayoutDay = hasDay;
+            _lastPayoutInGameDay = loadedDay;
             return true;
         }
 
@@ -136,7 +157,6 @@ namespace ClassicGTA.Core.Economy
             }
             catch (Exception ex)
             {
-                // Roll back ownership and refund cash if persistence fails.
                 _ownedIds.Remove(asset.ContentId);
                 _economy.Credit(asset.Price, "Refund:" + asset.ContentId);
                 _notifications.Log("[Assets] Persist failed for " + asset.ContentId + ", refunded: " + ex.Message);
@@ -148,7 +168,12 @@ namespace ClassicGTA.Core.Economy
             return new PurchaseResult(PurchaseStatus.Succeeded, "Purchased " + asset.DisplayName + ".");
         }
 
-        public int CollectPassiveIncome(int currentInGameDay)
+        /// <summary>
+        /// Collects passive business income using a monotonic day counter.
+        /// If currentInGameDay &lt; _lastPayoutInGameDay and allowSessionRestartRollover is true (e.g., new game session),
+        /// treats the restart as 1 elapsed day instead of freezing forever.
+        /// </summary>
+        public int CollectPassiveIncome(int currentInGameDay, bool allowSessionRestartRollover = false)
         {
             if (_context.IsOnlineSession || currentInGameDay < 0)
             {
@@ -159,16 +184,38 @@ namespace ClassicGTA.Core.Economy
             {
                 _hasLastPayoutDay = true;
                 _lastPayoutInGameDay = currentInGameDay;
-                PersistState();
+                try
+                {
+                    PersistState();
+                }
+                catch (Exception ex)
+                {
+                    // R-1 Fix: Never let first-call persistence failure throw out of UI click handler.
+                    _hasLastPayoutDay = false;
+                    _notifications.Log("[Assets] Baseline persist failed: " + ex.Message);
+                }
                 return 0;
             }
 
-            if (currentInGameDay <= _lastPayoutInGameDay)
+            int elapsedDays;
+            if (currentInGameDay < _lastPayoutInGameDay)
+            {
+                if (!allowSessionRestartRollover)
+                {
+                    return 0;
+                }
+                // C-2 Fix: Session restarted with reset clock; advance monotonically.
+                elapsedDays = 1;
+            }
+            else if (currentInGameDay == _lastPayoutInGameDay)
             {
                 return 0;
             }
+            else
+            {
+                elapsedDays = currentInGameDay - _lastPayoutInGameDay;
+            }
 
-            int elapsedDays = currentInGameDay - _lastPayoutInGameDay;
             if (elapsedDays > _offlineCapDays)
             {
                 elapsedDays = _offlineCapDays;
@@ -187,7 +234,6 @@ namespace ClassicGTA.Core.Economy
             long payoutLong = dailyTotal * elapsedDays;
             int payout = payoutLong > int.MaxValue ? int.MaxValue : (int)payoutLong;
 
-            // Settle payout day and persist BEFORE crediting cash (idempotent against double-credit).
             int previousDay = _lastPayoutInGameDay;
             _lastPayoutInGameDay = currentInGameDay;
 
@@ -216,6 +262,7 @@ namespace ClassicGTA.Core.Economy
         {
             var sb = new StringBuilder();
             sb.AppendLine(SchemaHeader);
+            sb.Append("SLOT=").AppendLine(_slotFingerprint);
             if (_hasLastPayoutDay)
             {
                 sb.Append("LAST_DAY=").AppendLine(_lastPayoutInGameDay.ToString());
@@ -224,12 +271,16 @@ namespace ClassicGTA.Core.Economy
             {
                 sb.Append("OWNED=").AppendLine(id);
             }
+            sb.AppendLine(SchemaFooter);
             _store.Save(SaveFileName, sb.ToString());
         }
 
         private static bool ValidatePayload(string text)
         {
-            return !string.IsNullOrWhiteSpace(text) && text.StartsWith(SchemaHeader, StringComparison.Ordinal);
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            string trimmed = text.Trim();
+            return trimmed.StartsWith(SchemaHeader, StringComparison.Ordinal) &&
+                   trimmed.EndsWith(SchemaFooter, StringComparison.Ordinal);
         }
     }
 }

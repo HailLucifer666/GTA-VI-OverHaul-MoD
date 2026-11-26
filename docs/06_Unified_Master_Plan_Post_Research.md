@@ -49,7 +49,7 @@ flowchart TD
 | **3-Tier Scheduler (`0ms` / `250ms` / `1000ms`) + Per-Module Fault Isolation** (if one module throws, suspend *only* that module—never crash the host) | `Sonnet 5.5`, `Kimi`, `Argon` | **`Script.Wait()` inside `Tick`** (freezes UI/input) and **unconditional 1s `TASK_VEHICLE_DRIVE_TO_COORD`** (breaks AI pathing) | `Argon (G2)` |
 | **Three-Way Entity Ownership (`Owned` / `Borrowed` / `Detached`)** + separate `Blip` tracking + restore `RenderingCamera` before delete | `Kimi`, `Argon`, `PLAN-Module1` | **Destructive `F10` toggle / removing weapons on `Aborted`** (destroys player's real save loadout) | `PLAN-Module1`, `GPT Pack` |
 | **Idempotent Economy Transactions:** validate → deduct → persist → *refund if persist fails* → spawn; settle payouts *before* awarding cash; cap passive income (`OfflineCapDays = 7`) | `Kimi`, `Qwen 4 MASTER` | **False-promise features:** Story Mission Replay (#17) and unlicensed Cinema clips (#13) must be honestly scoped as `[SANDBOX SUBSTITUTE]` | `/kee`, `Sonnet 5.5` |
-| **6-Gate GTA VI Porting Policy** (official PC release, public modding interface, permissive license, legal tools, clean install, verified APIs — zero leaks / `GTA VI BUILD Help` off-limits) | `Qwen 4 MASTER`, `PLAN-Module1` | **Hardcoded `C:\` paths & global NuGet cache on `C:\Users\...`** | `/kee` (User Rule) |
+| **6-Gate GTA VI Porting Policy** (official PC release, public modding interface, permissive license, legal tools, clean install, verified APIs — zero leaks) | `Qwen 4 MASTER`, `PLAN-Module1` | **Hardcoded `C:\` paths & global NuGet cache on `C:\Users\...`** | `/kee` (User Rule) |
 
 ---
 

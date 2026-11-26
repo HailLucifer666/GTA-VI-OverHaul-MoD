@@ -52,15 +52,20 @@ namespace ClassicGTA.Infrastructure
 
         public bool TryTrackEntity(int handle, string ownerModuleId, EntityOwnership ownership)
         {
-            if (handle <= 0) throw new ArgumentOutOfRangeException("handle");
-            if (string.IsNullOrWhiteSpace(ownerModuleId)) throw new ArgumentException("Owner required.", "ownerModuleId");
+            if (handle <= 0) return false;
+            if (string.IsNullOrWhiteSpace(ownerModuleId)) return false;
 
-            if (ownership == EntityOwnership.Owned && !_entities.ContainsKey(handle))
+            EntityRecord existing;
+            if (_entities.TryGetValue(handle, out existing))
             {
-                if (OwnedEntityCount >= _maxOwnedEntities)
-                {
-                    return false;
-                }
+                // Refuse to demote/overwrite existing ownership class (prevents Owned->Borrowed or Borrowed->Owned bugs).
+                return existing.Ownership == ownership &&
+                       string.Equals(existing.OwnerModuleId, ownerModuleId, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (ownership == EntityOwnership.Owned && OwnedEntityCount >= _maxOwnedEntities)
+            {
+                return false;
             }
 
             _entities[handle] = new EntityRecord
@@ -70,6 +75,24 @@ namespace ClassicGTA.Infrastructure
                 Ownership = ownership
             };
             return true;
+        }
+
+        public void DropAllWithoutDeleting()
+        {
+            // Used on SP->Online transition: drop stale pool handles without ever deleting recycled Online entities.
+            _entities.Clear();
+            _blips.Clear();
+            _cameras.Clear();
+        }
+
+        public void DeleteUntrackedEntity(int handle)
+        {
+            if (handle > 0) _adapter.DeleteEntity(handle);
+        }
+
+        public void DeleteUntrackedBlip(int blipHandle)
+        {
+            if (blipHandle > 0) _adapter.DeleteBlip(blipHandle);
         }
 
         public void TrackBlip(int blipHandle, string ownerModuleId)

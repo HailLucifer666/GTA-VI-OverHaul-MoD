@@ -115,18 +115,20 @@ namespace ClassicGTA.Core.Activities
                 return;
             }
 
-            int elapsed = gameTimeMs >= _waveStartMs ? (gameTimeMs - _waveStartMs) : 0;
-            if (elapsed >= _waveDurationMs)
-            {
-                _notifications.Show(_activeJobType + " Mission Failed: Time expired.");
-                AbortJob("Timeout");
-                return;
-            }
-
+            // R-5 Fix: Check target resolution BEFORE wave timeout so a wave completed on the deadline tick succeeds.
             WorldPoint playerPos = _adapter.GetPlayerPosition();
             if (_adapter.IsTargetResolved(_activeJobType, _targetHandle, playerPos))
             {
                 CompleteCurrentWave(gameTimeMs);
+                return;
+            }
+
+            bool timedOut = gameTimeMs < _waveStartMs || (gameTimeMs - _waveStartMs) >= _waveDurationMs;
+            if (timedOut)
+            {
+                _notifications.Show(_activeJobType + " Mission Failed: Time expired.");
+                AbortJob("Timeout");
+                return;
             }
         }
 
@@ -160,6 +162,8 @@ namespace ClassicGTA.Core.Activities
 
             if (!_registry.TryTrackEntity(target, ModuleId, EntityOwnership.Owned))
             {
+                _registry.DeleteUntrackedEntity(target);
+                _registry.DeleteUntrackedBlip(blip);
                 return false;
             }
             if (blip > 0)

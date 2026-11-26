@@ -184,7 +184,10 @@ namespace ClassicGTA.Core.Activities
             if (!_isRunning || !_isEnabled || _activePetHandle <= 0) return;
             if (_context.IsOnlineSession)
             {
-                DismissPet("OnlineSession");
+                // S-06 Fix: Drop handles without calling DeleteEntity across SP->Online transition.
+                _registry.DropAllWithoutDeleting();
+                _activePetHandle = 0;
+                _activeBreedId = null;
                 return;
             }
             if (!_adapter.IsEntityAlive(_activePetHandle))

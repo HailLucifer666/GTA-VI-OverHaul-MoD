@@ -1,27 +1,34 @@
 # Classic GTA Overhaul Mod
 
-A modular, open-source, offline Story Mode C# overhaul mod designed to restore 26 classic Grand Theft Auto sandbox mechanics for **GTA VI (PC)**, built with strict engine-agnostic separation so all core gameplay systems compile and pass automated tests today.
+A modular, story-mode-only C# overhaul mod prototyping classic Grand Theft Auto sandbox mechanics in **GTA V Legacy (PC)** (`ScriptHookVDotNet3 3.6.0` + `LemonUI.SHVDN3 2.2.0`), built behind engine-agnostic behavioral interfaces (`ClassicGTA.Contracts` + `ClassicGTA.Core`) for future portability when **GTA VI (PC)** and a verified public scripting interface launch.
+
+> **Honest Status (2026-11-26):**
+> - **Offline Unit-Tested Suite:** `94/94` automated tests passing (`0 Errors, 0 Warnings`), plus repeatable mutation probes in `.\probe.ps1`.
+> - **GTA V Legacy Adapter (`ClassicGTA.GTAV.dll`):** Compiles cleanly and wires **6 LemonUI submenus (`F7`)** covering Weapons/Safe-Zones, 911 Dispatch, Taxi, 12-Level Emergency Jobs, Properties/Businesses/Submersible Summon/Stocks, Casino Blackjack, and Friends/Guard Dogs. **Not yet live-tested in-game** (awaiting GTA V Legacy download completion — Phase 6B).
+> - **GTA VI (PC) Adapter:** Does not exist yet (gated on official GTA VI PC release + public scripting interface).
 
 ## Quick Start (Zero `C:\` Writes)
 
 ```powershell
-.\build.ps1
+.\build.ps1   # Auto-restores SHVDN3 3.6.0 + LemonUI 2.2.0 into .\.packages\, compiles all 5 projects, runs 94 tests
+.\probe.ps1   # Runs scripted /kee mutation probes (confirms RED on sabotage, then restores GREEN)
 ```
 
-- Compiles `ClassicGTA.Contracts`, `ClassicGTA.Core`, and `ClassicGTA.Tests` (`Release | x64`, `TreatWarningsAsErrors=true`) using Visual Studio MSBuild.
-- Runs the zero-dependency automated test suite (`ClassicGTA.Tests.exe`).
-- Keeps all NuGet packages strictly inside `.\.packages\` via `nuget.config`.
+## Player Prerequisites (GTA V Legacy Story Mode Only)
+- `ScriptHookV` + `ScriptHookVDotNet3` installed in the **GTA V root folder** (never copy `ScriptHookVDotNet3.dll` into `scripts\`).
+- Copy `ClassicGTA.GTAV.dll`, `ClassicGTA.Core.dll`, `ClassicGTA.Contracts.dll`, `ClassicGTA.Infrastructure.dll`, and `LemonUI.SHVDN3.dll` into `GTA V\scripts\`.
 
 ## Repository Layout
 
-- `PROGRESS_TRACKER.md` — Cross-session resume tracker (phase status, test counts, `/kee` sabotage probes).
-- `docs/` — PRD, MVP, Tech Stack, Architecture, `/kee` Audit Report, and Unified Master Plan.
-- `src/ClassicGTA.Contracts/` — Behavioral interfaces (`IModModule`, `IGameContext`, `IWeaponService`, `INotificationService`).
-- `src/ClassicGTA.Core/` — Pure C# gameplay modules and state machines (zero game DLL dependencies).
-- `tests/ClassicGTA.Tests/` — Automated state-matrix test runner.
-- `.zcode/`, `.claude/`, `AGENTS.md`, `TEAM-USAGE.md` — Local Software Dev Studio team installation.
+- `PROGRESS_TRACKER.md` — Cross-session resume tracker (phase status, test counts, probes).
+- `build.ps1` / `probe.ps1` — Reproducible build, test, and mutation-probe runners.
+- `src/ClassicGTA.Contracts/` — 14 engine-agnostic behavioral interfaces & DTOs.
+- `src/ClassicGTA.Core/` — Pure C# gameplay engines (zero `GTA.*` / `LemonUI.*` references).
+- `src/ClassicGTA.Infrastructure/` — Fault-isolated scheduler, 3-way entity/blip/camera registry, atomic 3× backup store, throttled INI.
+- `src/ClassicGTA.Adapter.GTAV/` — SHVDN3 3.6.0 + LemonUI 2.2.0 host (`F7` hub, `F8`/`F9`/`F10` hotkeys).
+- `tests/ClassicGTA.Tests/` — Zero-dependency automated test runner (94 tests + test-count guard).
 
 ## Legal & Safety
 
-- **Offline Story Mode Only:** `IsOnlineSession` hard-blocks all mod behavior.
-- **100% Free & Open Source (\$0):** No paywalls, no real-money gambling, no third-party IP, no cross-title asset ripping, and zero interaction with leaked builds.
+- **Story Mode Only:** No network or anti-cheat interaction; fail-closed `IsOnlineSession` blocks all actions in multiplayer.
+- **Non-Commercial & Native Assets Only:** Uses only vanilla game models and story-mode cash; zero cross-title asset ripping and zero affiliation with Rockstar Games / Take-Two Interactive.

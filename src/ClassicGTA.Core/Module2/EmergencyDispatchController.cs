@@ -156,7 +156,11 @@ namespace ClassicGTA.Core.Module2
             bool trackedPed = _registry.TryTrackEntity(spawned.ResponderPedHandle, ModuleId, EntityOwnership.Owned);
             if (!trackedVeh || !trackedPed)
             {
+                // H-02 Fix: Clean up both tracked and untracked allocations on budget refusal.
                 _registry.CleanupOwner(ModuleId, false);
+                if (!trackedVeh) _registry.DeleteUntrackedEntity(spawned.VehicleHandle);
+                if (!trackedPed) _registry.DeleteUntrackedEntity(spawned.ResponderPedHandle);
+                _registry.DeleteUntrackedBlip(spawned.BlipHandle);
                 _notifications.Log("[Module2] Entity budget exceeded; aborted dispatch.");
                 return false;
             }
@@ -206,9 +210,9 @@ namespace ClassicGTA.Core.Module2
                 return;
             }
 
-            // Timeout guard (handles GameTime wrap safely)
-            int elapsed = gameTimeMs >= _dispatchStartMs ? (gameTimeMs - _dispatchStartMs) : 0;
-            if (elapsed >= _config.ArrivalTimeoutMs)
+            // C-10 Fix: Handle GameTime wrap/reset cleanly using signed elapsed delta.
+            bool timedOut = gameTimeMs < _dispatchStartMs || (gameTimeMs - _dispatchStartMs) >= _config.ArrivalTimeoutMs;
+            if (timedOut)
             {
                 _notifications.Show("911 Dispatch: Unit timed out.");
                 FinishAndCleanup("Timeout", false);

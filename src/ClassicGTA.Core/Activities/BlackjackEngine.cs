@@ -38,6 +38,15 @@ namespace ClassicGTA.Core.Activities
         public BlackjackOutcome Outcome { get { return _outcome; } }
         public int PlayerTotal { get { return CalculateHandValue(_playerHand); } }
         public int DealerTotal { get { return CalculateHandValue(_dealerHand); } }
+        public int DealerVisibleTotal
+        {
+            get
+            {
+                if (_dealerHand.Count == 0) return 0;
+                if (!_roundActive) return DealerTotal;
+                return CalculateHandValue(new[] { _dealerHand[0] });
+            }
+        }
         public int CurrentBet { get { return _currentBet; } }
 
         public BlackjackEngine(
@@ -102,7 +111,7 @@ namespace ClassicGTA.Core.Activities
 
         public BlackjackOutcome Hit()
         {
-            if (!_roundActive) return _outcome;
+            if (!_roundActive || _context.IsOnlineSession) return _outcome;
 
             _playerHand.Add(DrawRank());
             if (PlayerTotal > 21)
@@ -114,7 +123,7 @@ namespace ClassicGTA.Core.Activities
 
         public BlackjackOutcome DoubleDown()
         {
-            if (!_roundActive || _playerHand.Count != 2) return _outcome;
+            if (!_roundActive || _context.IsOnlineSession || _playerHand.Count != 2) return _outcome;
             if (_economy.GetCash() < _currentBet || !_economy.TrySpend(_currentBet, "BlackjackDouble"))
             {
                 return _outcome;
@@ -133,7 +142,7 @@ namespace ClassicGTA.Core.Activities
 
         public BlackjackOutcome Stand()
         {
-            if (!_roundActive) return _outcome;
+            if (!_roundActive || _context.IsOnlineSession) return _outcome;
 
             while (DealerTotal < 17)
             {
@@ -210,7 +219,7 @@ namespace ClassicGTA.Core.Activities
         {
             _outcome = outcome;
             _roundActive = false;
-            if (payout > 0)
+            if (payout > 0 && !_context.IsOnlineSession)
             {
                 _economy.Credit(payout, "Blackjack:" + outcome);
             }

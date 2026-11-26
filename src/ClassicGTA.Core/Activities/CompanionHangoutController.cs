@@ -124,7 +124,11 @@ namespace ClassicGTA.Core.Activities
             if (!_isRunning || !_isEnabled || _state == HangoutState.Idle) return;
             if (_context.IsOnlineSession)
             {
-                EndHangout("OnlineSession", false);
+                // S-06 Fix: Drop handles without calling DeleteEntity across SP->Online transition.
+                _registry.DropAllWithoutDeleting();
+                _companionPedHandle = 0;
+                _activeCompanionId = null;
+                _state = HangoutState.Idle;
                 return;
             }
 

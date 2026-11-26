@@ -69,7 +69,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="DeployToGtaVScripts" AfterTargets="Build" Condition="'$(GTA5Dir)' != '' and Exists('$(GTA5Dir)\GTA5.exe')">
     <MakeDir Directories="$(GTA5Dir)\scripts" />
-    <Copy SourceFiles="$(TargetDir)ClassicGTA.GTAV.dll;$(TargetDir)ClassicGTA.Contracts.dll;$(TargetDir)ClassicGTA.Core.dll;$(TargetDir)ClassicGTA.Infrastructure.dll" DestinationFolder="$(GTA5Dir)\scripts" />
-    <Message Text="Deployed ClassicGTA mod DLLs to $(GTA5Dir)\scripts" Importance="high" />
+    <Copy SourceFiles="$(TargetDir)ClassicGTA.GTAV.dll;$(TargetDir)ClassicGTA.Contracts.dll;$(TargetDir)ClassicGTA.Core.dll;$(TargetDir)ClassicGTA.Infrastructure.dll;..\..\.packages\LemonUI.SHVDN3.2.2.0\lib\net48\LemonUI.SHVDN3.dll" DestinationFolder="$(GTA5Dir)\scripts" />
+    <Message Text="Deployed ClassicGTA mod DLLs + LemonUI.SHVDN3.dll to $(GTA5Dir)\scripts (ScriptHookVDotNet3.dll excluded)" Importance="high" />
   </Target>
 </Project>

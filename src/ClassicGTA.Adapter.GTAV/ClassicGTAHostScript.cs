@@ -8,13 +8,14 @@ using ClassicGTA.Core.Module1;
 using ClassicGTA.Core.Module2;
 using ClassicGTA.Infrastructure;
 using GTA;
+using GTA.Math;
 using LemonUI;
 using LemonUI.Menus;
 
 namespace ClassicGTA.Adapter.GTAV
 {
     /// <summary>
-    /// Unified SHVDN3 Script Host wiring all verified ClassicGTA.Core engines + LemonUI Submenus.
+    /// Unified SHVDN3 Script Host wiring verified ClassicGTA.Core engines + LemonUI Submenus.
     ///
     /// Hotkeys:
     ///   F7  : Open/Close Classic GTA Overhaul Hub (LemonUI)
@@ -26,8 +27,11 @@ namespace ClassicGTA.Adapter.GTAV
     {
         private readonly ObjectPool _uiPool = new ObjectPool();
         private readonly NativeMenu _rootMenu;
+        private readonly NativeCheckboxItem _zoneCheckbox;
         private readonly ModuleScheduler _scheduler;
         private readonly EntityOwnershipRegistry _registry;
+        private readonly GtaVGameContext _context;
+        private readonly GtaVNotificationService _notifications;
 
         private readonly WeaponAndZoneController _weaponsModule;
         private readonly EmergencyDispatchController _dispatchModule;
@@ -43,33 +47,36 @@ namespace ClassicGTA.Adapter.GTAV
         public ClassicGTAHostScript()
         {
             string dataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassicGTA_Data");
-            var notifications = new GtaVNotificationService(Path.Combine(dataDir, "ClassicGTA.log"));
-            var context = new GtaVGameContext();
+            _notifications = new GtaVNotificationService(Path.Combine(dataDir, "ClassicGTA.log"));
+            _context = new GtaVGameContext();
             var cleanup = new GtaVEntityCleanupAdapter();
-            var store = new AtomicFileStore(dataDir, notifications);
+            var store = new AtomicFileStore(dataDir, _notifications);
             var economy = new GtaVEconomyService();
 
             _registry = new EntityOwnershipRegistry(cleanup, 20);
-            _scheduler = new ModuleScheduler(notifications, 250, 1000);
+            _scheduler = new ModuleScheduler(_notifications, 250, 1000);
 
-            _weaponsModule = new WeaponAndZoneController(context, new GtaVWeaponService(), notifications, new WeaponAndZoneConfig());
-            _dispatchModule = new EmergencyDispatchController(context, new GtaVEmergencyDispatchAdapter(), _registry, notifications, new EmergencyDispatchConfig());
-            _taxiModule = new TaxiMissionController(context, new GtaVTaxiAdapter(), economy, _registry, notifications);
-            _sideJobModule = new EmergencySideJobController(context, new GtaVEmergencySideJobAdapter(), economy, _registry, notifications);
-            _companionModule = new CompanionHangoutController(context, new GtaVCompanionAdapter(), _registry, notifications);
-            _petModule = new PetCompanionController(context, new GtaVPetAdapter(), economy, _registry, store, notifications);
+            _weaponsModule = new WeaponAndZoneController(_context, new GtaVWeaponService(), _notifications, new WeaponAndZoneConfig());
+            _dispatchModule = new EmergencyDispatchController(_context, new GtaVEmergencyDispatchAdapter(), _registry, _notifications, new EmergencyDispatchConfig());
+            _taxiModule = new TaxiMissionController(_context, new GtaVTaxiAdapter(), economy, _registry, _notifications);
+            _sideJobModule = new EmergencySideJobController(_context, new GtaVEmergencySideJobAdapter(), economy, _registry, _notifications);
+            _companionModule = new CompanionHangoutController(_context, new GtaVCompanionAdapter(), _registry, _notifications);
+            _petModule = new PetCompanionController(_context, new GtaVPetAdapter(), economy, _registry, store, _notifications);
             SeedDefaultPets(_petModule);
-            _petModule.LoadState();
 
-            _assetsEngine = new AssetOwnershipEngine(context, economy, store, notifications, 7);
+            string slotId = "gtav_story_default";
+            _assetsEngine = new AssetOwnershipEngine(_context, economy, store, _notifications, 7, slotId);
             SeedDefaultAssets(_assetsEngine);
-            _assetsEngine.LoadState();
 
-            _stockEngine = new StockMarketEngine(context, economy, store, notifications);
+            _stockEngine = new StockMarketEngine(_context, economy, store, _notifications);
             SeedDefaultStocks(_stockEngine);
-            _stockEngine.LoadState();
 
-            _blackjackEngine = new BlackjackEngine(context, economy);
+            _blackjackEngine = new BlackjackEngine(_context, economy);
+
+            // H-10 Fix: Guard disk LoadState calls at construction so a locked/corrupt folder never aborts the script.
+            SafeLoad(() => _petModule.LoadState(), "Pets");
+            SafeLoad(() => _assetsEngine.LoadState(), "Assets");
+            SafeLoad(() => _stockEngine.LoadState(), "Stocks");
 
             _scheduler.Register(_weaponsModule);
             _scheduler.Register(_dispatchModule);
@@ -79,33 +86,72 @@ namespace ClassicGTA.Adapter.GTAV
             _scheduler.Register(_petModule);
             _scheduler.StartAll();
 
-            _rootMenu = BuildMenus(notifications);
+            _rootMenu = BuildMenus(out _zoneCheckbox);
 
             Tick += OnTick;
             KeyDown += OnKeyDown;
             Aborted += OnAborted;
 
-            notifications.Show("~g~Classic GTA Overhaul~s~ ready! ~y~F7~s~ Hub | ~y~F8~s~ Zone | ~y~F9~s~ 911 | ~y~F10~s~ Arsenal");
+            _notifications.Show("~g~Classic GTA Overhaul~s~ ready! ~y~F7~s~ Hub | ~y~F8~s~ Zone | ~y~F9~s~ 911 | ~y~F10~s~ Arsenal");
         }
 
         private void OnTick(object sender, EventArgs e)
         {
-            _uiPool.Process();
-            _scheduler.Tick(Game.GameTime);
+            // R-1 & C-8 Fix: Isolate UI pool processing and scheduler from SHVDN abort on transient exceptions.
+            try
+            {
+                _uiPool.Process();
+            }
+            catch (Exception ex)
+            {
+                _uiPool.HideAll();
+                _notifications.Log("[Host] UI Process error: " + ex.Message);
+                _notifications.Show("~r~Classic GTA UI error:~s~ check ClassicGTA.log");
+            }
+
+            try
+            {
+                _scheduler.Tick(Game.GameTime);
+            }
+            catch (Exception ex)
+            {
+                _notifications.Log("[Host] Scheduler error: " + ex.Message);
+            }
         }
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.F7)
+            try
             {
-                _rootMenu.Visible = !_rootMenu.Visible;
-                return;
-            }
+                if (e.KeyCode == Keys.F7)
+                {
+                    // H-12 / R-10 Fix: Hide all open submenus cleanly instead of stacking.
+                    if (_uiPool.AreAnyVisible)
+                    {
+                        _uiPool.HideAll();
+                    }
+                    else
+                    {
+                        // C-7 Fix: Sync F8 checkbox with live module state on open.
+                        if (_zoneCheckbox != null) _zoneCheckbox.Checked = _weaponsModule.ZoneRestoreEnabled;
+                        _rootMenu.Visible = true;
+                    }
+                    return;
+                }
 
-            GameKey mapped = MapKey(e.KeyCode);
-            if (mapped != GameKey.None)
+                GameKey mapped = MapKey(e.KeyCode);
+                if (mapped != GameKey.None)
+                {
+                    _scheduler.DispatchKey(mapped);
+                    if (mapped == GameKey.F8 && _zoneCheckbox != null)
+                    {
+                        _zoneCheckbox.Checked = _weaponsModule.ZoneRestoreEnabled;
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                _scheduler.DispatchKey(mapped);
+                _notifications.Log("[Host] KeyDown error: " + ex.Message);
             }
         }
 
@@ -117,20 +163,30 @@ namespace ClassicGTA.Adapter.GTAV
 
             _uiPool.HideAll();
             _scheduler.Dispose();
-            _registry.CleanupAll(false);
+
+            // S-06 Fix: Never call DeleteEntity on stale handles if abort occurs during Online transition.
+            if (_context.IsOnlineSession)
+            {
+                _registry.DropAllWithoutDeleting();
+            }
+            else
+            {
+                _registry.CleanupAll(false);
+            }
         }
 
-        private NativeMenu BuildMenus(INotificationService notifications)
+        private NativeMenu BuildMenus(out NativeCheckboxItem zoneCheckbox)
         {
-            var root = new NativeMenu("CLASSIC GTA", "OVERHAUL HUB", "Offline Story Mode Classic Sandbox Restoration");
+            var root = new NativeMenu("CLASSIC GTA", "OVERHAUL HUB", "Story Mode Classic Sandbox Restoration");
             _uiPool.Add(root);
 
             // 1. Weapons & Safe-Zones
             var weaponsSub = AddSubmenu(root, "Weapons & Safe-Zones", "Pocket Arsenal and interior weapon restoration.");
-            var zoneItem = new NativeCheckboxItem("Zone Weapon Restore (F8)", "Restores combat controls & owned weapons in restricted zones.", true);
-            zoneItem.CheckboxChanged += (s, a) => { _weaponsModule.ZoneRestoreEnabled = zoneItem.Checked; };
-            weaponsSub.Add(zoneItem);
-            AddAction(weaponsSub, "Grant Pocket Arsenal (F10)", "Grants all valid weapons with max ammo.", () => _weaponsModule.GrantPocketArsenal());
+            zoneCheckbox = new NativeCheckboxItem("Zone Weapon Restore (F8)", "Restores combat controls & owned weapons in restricted zones.", _weaponsModule.ZoneRestoreEnabled);
+            NativeCheckboxItem localZoneRef = zoneCheckbox;
+            zoneCheckbox.CheckboxChanged += (s, a) => { _weaponsModule.ZoneRestoreEnabled = localZoneRef.Checked; };
+            weaponsSub.Add(zoneCheckbox);
+            AddAction(weaponsSub, "Grant Pocket Arsenal (F10)", "Grants all valid weapons with max ammo (non-destructive).", () => _weaponsModule.GrantPocketArsenal());
 
             // 2. 911 Emergency Dispatch
             var dispatchSub = AddSubmenu(root, "911 Emergency Dispatch", "Call Police, Ambulance, or Fire Department.");
@@ -146,35 +202,37 @@ namespace ClassicGTA.Adapter.GTAV
             AddAction(jobsSub, "Emergency Job: Abort", "Cancel active emergency side-job.", () => _sideJobModule.AbortJob("UserAborted"));
 
             // 4. Economy, Properties & Stocks
-            var econSub = AddSubmenu(root, "Properties, Businesses & Stocks", "Buy safehouses, passive businesses, vehicles & LCN stocks.");
-            AddAction(econSub, "Buy Del Perro Safehouse ($50,000)", "Classic open-market safehouse.", () => notifications.Show(_assetsEngine.TryPurchase("safehouse.del_perro").Message));
-            AddAction(econSub, "Buy Classic Nightclub ($120,000)", "Pays $10,000 per elapsed in-game day (7d cap).", () => notifications.Show(_assetsEngine.TryPurchase("business.malibu_club").Message));
-            AddAction(econSub, "Buy Kraken Submersible ($250,000)", "Unlock submarine ownership.", () => notifications.Show(_assetsEngine.TryPurchase("sub.kraken").Message));
-            AddAction(econSub, "Collect Business Passive Income", "Collects accrued in-game day income.", () =>
+            var econSub = AddSubmenu(root, "Properties, Businesses & Stocks", "Buy safehouses, passive businesses, submarine & LCN stocks.");
+            AddAction(econSub, "Buy Del Perro Safehouse ($50,000) [Ledger]", "Unlocks safehouse ownership record (world interior pending).", () => _notifications.Show(_assetsEngine.TryPurchase("safehouse.del_perro").Message));
+            AddAction(econSub, "Buy Classic Nightclub ($120,000)", "Pays $10,000 per elapsed day (7-day cap).", () => _notifications.Show(_assetsEngine.TryPurchase("business.malibu_club").Message));
+            AddAction(econSub, "Buy Kraken Submersible ($250,000)", "Unlocks Submarine ownership + Summon Kraken.", () => _notifications.Show(_assetsEngine.TryPurchase("sub.kraken").Message));
+            AddAction(econSub, "Summon Owned Kraken Submersible", "Spawns your owned Kraken nearby.", SummonOwnedSubmersible);
+            AddAction(econSub, "Collect Business Passive Income", "Collects accrued business income across sessions.", () =>
             {
-                int day = (int)(World.CurrentTimeOfDay.TotalHours / 24.0) + (Game.GameTime / 2880000);
-                int paid = _assetsEngine.CollectPassiveIncome(day);
-                if (paid == 0) notifications.Show("No new business income due yet.");
+                // C-2 Fix: Monotonic UTC day + session day so restarts never freeze payouts.
+                int monotonicDay = (int)(DateTime.UtcNow - new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalDays + (Game.GameTime / 2880000);
+                int paid = _assetsEngine.CollectPassiveIncome(monotonicDay, true);
+                if (paid == 0) _notifications.Show("No new business income due yet.");
             });
-            AddAction(econSub, "Stocks: Buy 10 LCN1", "Buy 10 shares of Cluckin Bell.", () => notifications.Show(_stockEngine.TryBuyShares("LCN1", 10).Message));
-            AddAction(econSub, "Stocks: Sell 10 LCN1", "Sell 10 shares of Cluckin Bell.", () => notifications.Show(_stockEngine.TrySellShares("LCN1", 10).Message));
+            AddAction(econSub, "Stocks: Buy 10 LCN1", "Buy 10 shares of Cluckin Bell.", () => _notifications.Show(_stockEngine.TryBuyShares("LCN1", 10).Message));
+            AddAction(econSub, "Stocks: Sell 10 LCN1", "Sell 10 shares of Cluckin Bell.", () => _notifications.Show(_stockEngine.TrySellShares("LCN1", 10).Message));
             AddAction(econSub, "Stocks: Advance Market Tick", "Simulate market price movement.", () =>
             {
                 _stockEngine.AdvanceMarketTick();
                 StockQuote q = _stockEngine.GetQuote("LCN1");
-                notifications.Show("LCN1 now $" + q.CurrentPrice + " (Owned: " + q.SharesOwned + ")");
+                _notifications.Show("LCN1 now $" + q.CurrentPrice + " (Owned: " + q.SharesOwned + ")");
             });
 
-            // 5. Casino Blackjack
-            var bjSub = AddSubmenu(root, "Casino Blackjack (Virtual Cash)", "Classic 21 with 3:2 Natural Blackjack.");
-            AddAction(bjSub, "Deal $100 Hand", "Start a new $100 hand.", () => DealBlackjack(100, notifications));
-            AddAction(bjSub, "Deal $500 Hand", "Start a new $500 hand.", () => DealBlackjack(500, notifications));
+            // 5. Casino Blackjack (Story Mode Cash)
+            var bjSub = AddSubmenu(root, "Casino Blackjack (Story Cash)", "Classic 21 with 3:2 Natural Blackjack.");
+            AddAction(bjSub, "Deal $100 Hand", "Start a new $100 hand.", () => DealBlackjack(100));
+            AddAction(bjSub, "Deal $500 Hand", "Start a new $500 hand.", () => DealBlackjack(500));
             AddAction(bjSub, "Hit", "Draw another card.", () =>
             {
                 if (_blackjackEngine.IsRoundActive)
                 {
                     BlackjackOutcome res = _blackjackEngine.Hit();
-                    notifications.Show("Blackjack Hit: Total=" + _blackjackEngine.PlayerTotal + " (" + res + ")");
+                    _notifications.Show("Blackjack Hit: Player=" + _blackjackEngine.PlayerTotal + " vs Dealer=" + _blackjackEngine.DealerVisibleTotal + " (" + res + ")");
                 }
             });
             AddAction(bjSub, "Double Down", "Double bet and take one card.", () =>
@@ -182,7 +240,7 @@ namespace ClassicGTA.Adapter.GTAV
                 if (_blackjackEngine.IsRoundActive)
                 {
                     BlackjackOutcome res = _blackjackEngine.DoubleDown();
-                    notifications.Show("Blackjack Double: " + res + " (P=" + _blackjackEngine.PlayerTotal + " vs D=" + _blackjackEngine.DealerTotal + ")");
+                    _notifications.Show("Blackjack Double: " + res + " (P=" + _blackjackEngine.PlayerTotal + " vs D=" + _blackjackEngine.DealerVisibleTotal + ")");
                 }
             });
             AddAction(bjSub, "Stand", "Hold hand and let dealer play.", () =>
@@ -190,19 +248,25 @@ namespace ClassicGTA.Adapter.GTAV
                 if (_blackjackEngine.IsRoundActive)
                 {
                     BlackjackOutcome res = _blackjackEngine.Stand();
-                    notifications.Show("Blackjack: " + res + " (P=" + _blackjackEngine.PlayerTotal + " vs D=" + _blackjackEngine.DealerTotal + ")");
+                    _notifications.Show("Blackjack: " + res + " (P=" + _blackjackEngine.PlayerTotal + " vs D=" + _blackjackEngine.DealerTotal + ")");
                 }
             });
 
             // 6. Friends & Guard Dogs
             var socialSub = AddSubmenu(root, "Friends & Guard Dogs", "Call hangout buddies and command guard dogs.");
-            AddAction(socialSub, "Call Buddy: Lamar", "Spawn Lamar to hang out and back you up.", () => _companionModule.CallCompanion("buddy.lamar"));
-            AddAction(socialSub, "Buddy: Combat Assist", "Order companion to engage threats.", () => _companionModule.CommandCombatAssist());
+            AddAction(socialSub, "Call Buddy: Lamar", "Spawn Lamar to hang out and back you up.", () =>
+            {
+                if (!_companionModule.CallCompanion("buddy.lamar")) _notifications.Show("Buddy already active or unavailable.");
+            });
+            AddAction(socialSub, "Buddy: Combat Assist", "Order companion to engage threats.", () =>
+            {
+                if (!_companionModule.CommandCombatAssist()) _notifications.Show("No active buddy to command.");
+            });
             AddAction(socialSub, "Buddy: Dismiss", "Dismiss companion naturally.", () => _companionModule.DismissCompanion());
-            AddAction(socialSub, "Buy Rottweiler ($1,500)", "Purchase a loyal guard dog.", () => notifications.Show(_petModule.TryBuyBreed("dog.rottweiler").Message));
+            AddAction(socialSub, "Buy Rottweiler ($1,500)", "Purchase a loyal guard dog.", () => _notifications.Show(_petModule.TryBuyBreed("dog.rottweiler").Message));
             AddAction(socialSub, "Summon Rottweiler", "Call your owned Rottweiler.", () =>
             {
-                if (!_petModule.SummonPet("dog.rottweiler")) notifications.Show("Buy the Rottweiler first or dismiss active dog.");
+                if (!_petModule.SummonPet("dog.rottweiler")) _notifications.Show("Buy the Rottweiler first or dismiss active dog.");
             });
             AddAction(socialSub, "Dog: Follow", "Order dog to follow.", () => _petModule.GiveCommand(PetCommand.Follow));
             AddAction(socialSub, "Dog: Sit", "Order dog to stay.", () => _petModule.GiveCommand(PetCommand.Sit));
@@ -212,16 +276,48 @@ namespace ClassicGTA.Adapter.GTAV
             return root;
         }
 
-        private void DealBlackjack(int bet, INotificationService notifications)
+        private void SummonOwnedSubmersible()
         {
-            if (_blackjackEngine.StartHand(bet))
+            if (_context.IsOnlineSession || !_context.IsPlayerReady) return;
+            if (!_assetsEngine.IsOwned("sub.kraken"))
             {
-                notifications.Show("Blackjack $" + bet + ": Player=" + _blackjackEngine.PlayerTotal + " vs Dealer=" + _blackjackEngine.DealerTotal + " (" + _blackjackEngine.Outcome + ")");
+                _notifications.Show("Buy the Kraken Submersible first ($250,000).");
+                return;
+            }
+
+            Ped player = Game.Player.Character;
+            Vector3 spawnPos = player.Position + (player.ForwardVector * 8f);
+            var model = new Model(VehicleHash.Submersible2);
+            Vehicle sub = World.CreateVehicle(model, spawnPos, player.Heading);
+            model.MarkAsNoLongerNeeded();
+            if (sub != null && sub.Exists())
+            {
+                sub.MarkAsNoLongerNeeded();
+                _notifications.Show("Kraken Submersible delivered!");
             }
             else
             {
-                notifications.Show("Cannot deal hand (round active or insufficient cash).");
+                _notifications.Show("Could not deliver Kraken here — move to an open area or dock.");
             }
+        }
+
+        private void DealBlackjack(int bet)
+        {
+            if (_blackjackEngine.StartHand(bet))
+            {
+                // C-6 Fix: Show DealerVisibleTotal (upcard only) while round is active!
+                _notifications.Show("Blackjack $" + bet + ": Player=" + _blackjackEngine.PlayerTotal + " vs Dealer=" + _blackjackEngine.DealerVisibleTotal + " (" + _blackjackEngine.Outcome + ")");
+            }
+            else
+            {
+                _notifications.Show("Cannot deal hand (round active or insufficient cash).");
+            }
+        }
+
+        private void SafeLoad(Action loadAction, string label)
+        {
+            try { loadAction(); }
+            catch (Exception ex) { _notifications.Log("[Host] SafeLoad failed for " + label + ": " + ex.Message); }
         }
 
         private NativeMenu AddSubmenu(NativeMenu parent, string title, string description)

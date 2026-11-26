@@ -40,7 +40,7 @@ function Invoke-Probe($name, $relPath, $find, $replace, $expectedFailPrefix) {
 }
 
 Write-Host ""
-Write-Host "=== Step 2: Running Scripted /kee Sabotage Probes ===" -ForegroundColor Cyan
+Write-Host "=== Step 2: Running 12 Scripted /kee Sabotage Probes ===" -ForegroundColor Cyan
 
 try {
     Invoke-Probe "P01_OnlineSafetyGuard" `
@@ -69,15 +69,51 @@ try {
 
     Invoke-Probe "P05_AssetSlotIsolation" `
         "src\ClassicGTA.Core\Economy\AssetOwnershipEngine.cs" `
-        "if (!string.Equals(loadedSlot, _slotFingerprint, StringComparison.OrdinalIgnoreCase))" `
-        "if (false && !string.Equals(loadedSlot, _slotFingerprint, StringComparison.OrdinalIgnoreCase))" `
-        "88_Assets_DifferentSaveSlotFingerprint_Isolated"
+        "ClassicGTA_Assets_"" + PersistenceCodec.SanitizeSlotId(_slotFingerprint) + "".dat" `
+        "ClassicGTA_Assets_shared.dat" `
+        "99_Host_TwoSlots_KeepSeparateWalletAndAssetFilesWithoutOverwrite"
 
     Invoke-Probe "P06_Module1DelayedStripRestore" `
         "src\ClassicGTA.Core\Module1\WeaponAndZoneController.cs" `
         "_interiorRestoreRetriesRemaining = 8;" `
         "_interiorRestoreRetriesRemaining = 1;" `
         "91_Module1_StripHappeningOnTickNPlus1_StillRestores"
+
+    Invoke-Probe "P07_OutdoorsNoCombatOverride" `
+        "src\ClassicGTA.Core\Module1\WeaponAndZoneController.cs" `
+        "if (!_wasInInterior && _weapons.GetPlayerInteriorId() == 0)" `
+        "if (false && !_wasInInterior && _weapons.GetPlayerInteriorId() == 0)" `
+        "104_Module1_OutdoorsFastTickNeverOverridesControls_AndF10NeverLeavesZoneFlagSet"
+
+    Invoke-Probe "P08_StrictPersistenceRejectsTruncated" `
+        "src\ClassicGTA.Contracts\PersistenceCodec.cs" `
+        "return TryParseStrict(raw, expectedHeader, recordValidator, out records);" `
+        "records = null; return records == null && !string.IsNullOrWhiteSpace(raw) && raw.Trim().StartsWith(expectedHeader, StringComparison.Ordinal);" `
+        "106_Persistence_TruncatedBak1RejectedAndCompleteBak2Recovered_All7Engines"
+
+    Invoke-Probe "P09_UiRecoveryNonThrowing" `
+        "src\ClassicGTA.Adapter.GTAV\UiLoopGuard.cs" `
+        "SafeInvoke(hideAllAction);" `
+        "if (hideAllAction != null) hideAllAction();" `
+        "109_UiLoopGuard_RecoveryExceptionNeverEscapes_AndTripsCircuitBreaker"
+
+    Invoke-Probe "P10_RoadSpawnMinDistance" `
+        "src\ClassicGTA.Adapter.GTAV\RoadSpawnValidator.cs" `
+        "return actualDist >= minDistance && actualDist <= maxDistance;" `
+        "return actualDist >= minDistance * 0.5f && actualDist <= maxDistance;" `
+        "111_Dispatch_RoadSpawnRejectsBelowMin_AndFireEvaluatorHonestOutcome"
+
+    Invoke-Probe "P11_BlackjackOnlineVoidNotPush" `
+        "src\ClassicGTA.Core\Activities\BlackjackEngine.cs" `
+        "_outcome = BlackjackOutcome.VoidedOnline;" `
+        "_outcome = BlackjackOutcome.Push;" `
+        "112_Blackjack_OnlineVoidReturnsVoidedOnlineAndRefundsOnStoryResume"
+
+    Invoke-Probe "P12_KrakenDryLandRejected" `
+        "src\ClassicGTA.Adapter.GTAV\KrakenDeliveryController.cs" `
+        "if (!_adapter.IsSuitableWaterLocation())" `
+        "if (false && !_adapter.IsSuitableWaterLocation())" `
+        "108_Kraken_RejectsDryLandCapsAtOneEnforcesBudgetAndCleansUpOnAbortAndOnline"
 }
 finally {
     Write-Host ""

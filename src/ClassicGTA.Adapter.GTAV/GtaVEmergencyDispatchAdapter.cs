@@ -8,7 +8,9 @@ namespace ClassicGTA.Adapter.GTAV
     internal sealed class GtaVEmergencyDispatchAdapter : IEmergencyDispatchAdapter
     {
         private const ulong HashStopFireInRange = 0x056A8A219B8E829FUL;
+        private const ulong HashGetNumberOfFiresInRange = 0x501815060E0D259AUL;
         private readonly System.Random _rng = new System.Random();
+        private int _lastParamedicPedHandle;
 
         public WorldPoint GetPlayerPosition()
         {
@@ -31,8 +33,7 @@ namespace ClassicGTA.Adapter.GTAV
                 if (roadPos.LengthSquared() <= 1f) continue;
 
                 var candidate = new WorldPoint(roadPos.X, roadPos.Y, roadPos.Z);
-                float actualDist = candidate.DistanceTo(target);
-                if (actualDist >= minDistance * 0.5f && actualDist <= maxDistance)
+                if (RoadSpawnValidator.IsWithinSpawnRange(candidate, target, minDistance, maxDistance))
                 {
                     spawnPoint = candidate;
                     return true;
@@ -95,6 +96,10 @@ namespace ClassicGTA.Adapter.GTAV
                 blipHandle = blip.Handle;
             }
 
+            if (service == EmergencyServiceType.Ambulance)
+            {
+                _lastParamedicPedHandle = ped.Handle;
+            }
             return DispatchSpawnResult.Success(veh.Handle, ped.Handle, blipHandle);
         }
 
@@ -129,6 +134,15 @@ namespace ClassicGTA.Adapter.GTAV
 
         public void HealPlayerToFull()
         {
+            if (_lastParamedicPedHandle > 0)
+            {
+                Ped medic = Entity.FromHandle(_lastParamedicPedHandle) as Ped;
+                if (medic != null && medic.Exists() && medic.IsInVehicle())
+                {
+                    medic.Task.LeaveVehicle(LeaveVehicleFlags.None);
+                }
+            }
+
             Ped player = Game.Player.Character;
             if (player != null && player.Exists() && player.IsAlive)
             {
@@ -147,8 +161,15 @@ namespace ClassicGTA.Adapter.GTAV
 
         public bool TryExtinguishNearbyFires(WorldPoint center, float radius)
         {
+            // I-07 Fix: Measure fire count before and after STOP_FIRE_IN_RANGE so Core's failure branch is honest.
+            int firesBefore = Function.Call<int>((Hash)HashGetNumberOfFiresInRange, center.X, center.Y, center.Z, radius);
+            if (firesBefore <= 0)
+            {
+                return false;
+            }
             Function.Call((Hash)HashStopFireInRange, center.X, center.Y, center.Z, radius);
-            return true;
+            int firesAfter = Function.Call<int>((Hash)HashGetNumberOfFiresInRange, center.X, center.Y, center.Z, radius);
+            return FireExtinguishEvaluator.DidExtinguish(firesBefore, firesAfter);
         }
 
         public void TaskDepart(int responderPedHandle, int vehicleHandle)

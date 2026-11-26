@@ -203,17 +203,22 @@ namespace ClassicGTA.Core.Activities
         public bool LoadState()
         {
             string raw;
-            if (!_store.TryLoad(SaveFileName, s => !string.IsNullOrWhiteSpace(s) && s.StartsWith(SchemaHeader, StringComparison.Ordinal), out raw))
+            if (!_store.TryLoad(SaveFileName, ValidatePayload, out raw))
+            {
+                return false;
+            }
+
+            List<string> records;
+            if (!PersistenceCodec.TryParseStrict(raw, SchemaHeader, IsValidRecord, out records))
             {
                 return false;
             }
 
             _ownedBreeds.Clear();
-            string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
+            for (int i = 0; i < records.Count; i++)
             {
-                string id = lines[i].Trim();
-                if (id.Length > 0 && _breedPrices.ContainsKey(id))
+                string id = records[i];
+                if (_breedPrices.ContainsKey(id))
                 {
                     _ownedBreeds.Add(id);
                 }
@@ -231,13 +236,18 @@ namespace ClassicGTA.Core.Activities
 
         private void PersistState()
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(SchemaHeader);
-            foreach (string id in _ownedBreeds)
-            {
-                sb.AppendLine(id);
-            }
-            _store.Save(SaveFileName, sb.ToString());
+            var records = new List<string>(_ownedBreeds);
+            _store.Save(SaveFileName, PersistenceCodec.Serialize(SchemaHeader, records), ValidatePayload);
+        }
+
+        private static bool ValidatePayload(string text)
+        {
+            return PersistenceCodec.ValidateStrict(text, SchemaHeader, IsValidRecord);
+        }
+
+        private static bool IsValidRecord(string line)
+        {
+            return !string.IsNullOrWhiteSpace(line) && line.IndexOf('|') < 0;
         }
     }
 }

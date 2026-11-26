@@ -36,9 +36,10 @@ namespace ClassicGTA.Tests
             tests.AddRange(Phase5BTests.GetAll());
             tests.AddRange(Phase5CTests.GetAll());
             tests.AddRange(HardenRegressionTests.GetAll());
+            tests.AddRange(AdapterSeamTests.GetAll());
 
             // V-21 Fix: Reject duplicate test names and enforce minimum unique test count.
-            const int expectedMinTests = 98;
+            const int expectedMinTests = 116;
             var seenNames = new HashSet<string>(StringComparer.Ordinal);
             foreach (var entry in tests)
             {
@@ -104,9 +105,12 @@ namespace ClassicGTA.Tests
         {
             FakeGameContext ctx; FakeWeaponService weapons; FakeNotificationService notify;
             var mod = CreateController(out ctx, out weapons, out notify);
+            // I-03 Fix: Combat controls are only overridden when inside a restricted interior.
+            weapons.InteriorId = 42;
+            mod.SlowTick(1000);
             mod.FastTick();
-            Assert(weapons.EnableCombatControlsCalls == 1, "Expected EnableCombatControlsThisFrame once.");
-            Assert(weapons.DisableFiringFalseCalls == 1, "Expected SetDisablePlayerFiring(false) once.");
+            Assert(weapons.EnableCombatControlsCalls == 1, "Expected EnableCombatControlsThisFrame once inside interior.");
+            Assert(weapons.DisableFiringFalseCalls == 1, "Expected SetDisablePlayerFiring(false) once inside interior.");
         }
 
         private static void FastTick_DuringCutscene_DoesNotTouchControls()

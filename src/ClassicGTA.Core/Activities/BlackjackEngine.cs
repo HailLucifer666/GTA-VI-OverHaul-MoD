@@ -12,7 +12,8 @@ namespace ClassicGTA.Core.Activities
         DealerWin = 3,
         Push = 4,
         PlayerBust = 5,
-        DealerBust = 6
+        DealerBust = 6,
+        VoidedOnline = 7
     }
 
     /// <summary>
@@ -48,6 +49,20 @@ namespace ClassicGTA.Core.Activities
             }
         }
         public int CurrentBet { get { return _currentBet; } }
+        public int PendingOnlineRefund { get; private set; }
+
+        public int ClaimPendingRefund()
+        {
+            if (_context.IsOnlineSession || PendingOnlineRefund <= 0)
+            {
+                return 0;
+            }
+
+            int refund = PendingOnlineRefund;
+            PendingOnlineRefund = 0;
+            _economy.Credit(refund, "Blackjack:OnlineRefund");
+            return refund;
+        }
 
         public BlackjackEngine(
             IGameContext context,
@@ -79,6 +94,7 @@ namespace ClassicGTA.Core.Activities
         public bool StartHand(int bet)
         {
             if (_context.IsOnlineSession || _roundActive) return false;
+            ClaimPendingRefund();
             if (bet < _minBet || bet > _maxBet) return false;
             if (_economy.GetCash() < bet || !_economy.TrySpend(bet, "BlackjackBet")) return false;
 
@@ -230,7 +246,12 @@ namespace ClassicGTA.Core.Activities
 
         private BlackjackOutcome VoidForOnline()
         {
-            _outcome = BlackjackOutcome.Push;
+            // I-08 Fix: Record explicit VoidedOnline outcome and queue a Story Mode refund without touching Online cash.
+            if (_currentBet > 0)
+            {
+                PendingOnlineRefund += _currentBet;
+            }
+            _outcome = BlackjackOutcome.VoidedOnline;
             _roundActive = false;
             _currentBet = 0;
             return _outcome;

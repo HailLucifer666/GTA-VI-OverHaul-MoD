@@ -42,9 +42,19 @@ namespace ClassicGTA.Tests
             throw new IOException("Simulated disk full failure");
         }
 
+        public void Save(string fileName, string content, Func<string, bool> existingBackupValidator)
+        {
+            throw new IOException("Simulated disk full failure");
+        }
+
         public bool TryLoad(string fileName, Func<string, bool> validator, out string content)
         {
             content = null;
+            return false;
+        }
+
+        public bool Exists(string fileName)
+        {
             return false;
         }
     }

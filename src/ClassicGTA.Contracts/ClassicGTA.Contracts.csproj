@@ -51,6 +51,7 @@
     <Compile Include="ITaxiAdapter.cs" />
     <Compile Include="IWeaponService.cs" />
     <Compile Include="MedalRating.cs" />
+    <Compile Include="PersistenceCodec.cs" />
     <Compile Include="PetCommand.cs" />
     <Compile Include="PurchaseResult.cs" />
     <Compile Include="RpgSkillType.cs" />

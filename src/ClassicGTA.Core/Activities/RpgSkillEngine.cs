@@ -65,38 +65,54 @@ namespace ClassicGTA.Core.Activities
 
         public void SaveState()
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(SchemaHeader);
+            var records = new List<string>(_totalXp.Count);
             foreach (var kv in _totalXp)
             {
-                sb.Append((int)kv.Key).Append('|').AppendLine(kv.Value.ToString());
+                records.Add(((int)kv.Key) + "|" + kv.Value);
             }
-            _store.Save(SaveFileName, sb.ToString());
+            _store.Save(SaveFileName, PersistenceCodec.Serialize(SchemaHeader, records), ValidatePayload);
         }
 
         public bool LoadState()
         {
             string raw;
-            if (!_store.TryLoad(SaveFileName, s => !string.IsNullOrWhiteSpace(s) && s.StartsWith(SchemaHeader, StringComparison.Ordinal), out raw))
+            if (!_store.TryLoad(SaveFileName, ValidatePayload, out raw))
             {
                 return false;
             }
 
-            string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
+            List<string> records;
+            if (!PersistenceCodec.TryParseStrict(raw, SchemaHeader, IsValidRecord, out records))
             {
-                string[] parts = lines[i].Trim().Split('|');
+                return false;
+            }
+
+            for (int i = 0; i < records.Count; i++)
+            {
+                string[] parts = records[i].Split('|');
                 int skillInt; int xp;
-                if (parts.Length == 2 && int.TryParse(parts[0], out skillInt) && int.TryParse(parts[1], out xp))
+                if (int.TryParse(parts[0], out skillInt) && int.TryParse(parts[1], out xp) && Enum.IsDefined(typeof(RpgSkillType), skillInt))
                 {
-                    if (Enum.IsDefined(typeof(RpgSkillType), skillInt))
-                    {
-                        int maxXp = MaxLevel * XpPerLevel;
-                        _totalXp[(RpgSkillType)skillInt] = xp < 0 ? 0 : (xp > maxXp ? maxXp : xp);
-                    }
+                    int maxXp = MaxLevel * XpPerLevel;
+                    _totalXp[(RpgSkillType)skillInt] = xp < 0 ? 0 : (xp > maxXp ? maxXp : xp);
                 }
             }
             return true;
+        }
+
+        private static bool ValidatePayload(string text)
+        {
+            return PersistenceCodec.ValidateStrict(text, SchemaHeader, IsValidRecord);
+        }
+
+        private static bool IsValidRecord(string line)
+        {
+            string[] parts = line.Split('|');
+            int skillInt; int xp;
+            return parts.Length == 2 &&
+                   int.TryParse(parts[0], out skillInt) &&
+                   Enum.IsDefined(typeof(RpgSkillType), skillInt) &&
+                   int.TryParse(parts[1], out xp) && xp >= 0;
         }
     }
 }

@@ -46,6 +46,7 @@
     <Compile Include="Activities\RpgSkillEngine.cs" />
     <Compile Include="Activities\TaxiMissionController.cs" />
     <Compile Include="Economy\AssetOwnershipEngine.cs" />
+    <Compile Include="Economy\ModWalletEconomyService.cs" />
     <Compile Include="Economy\SafehouseDecoratorEngine.cs" />
     <Compile Include="Economy\StockMarketEngine.cs" />
     <Compile Include="Module1\WeaponAndZoneConfig.cs" />

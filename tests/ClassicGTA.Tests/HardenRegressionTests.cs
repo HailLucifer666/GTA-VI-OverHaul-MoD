@@ -125,7 +125,7 @@ namespace ClassicGTA.Tests
             Assert(bj.DealerVisibleTotal == 17, "Full dealer total (17) should be visible after Stand.");
         }
 
-        // V-18 & V-20 Fix: Mid-round transition to Online voids cleanly on Hit/Double/Stand without freezing or settling cash.
+        // I-08 & V-18 Fix: Mid-round transition to Online voids cleanly as VoidedOnline on Hit/Double/Stand without mutating Online cash.
         private static void Blackjack_OnlineMidRoundBlocksHitStandAndDouble()
         {
             var ctx = new FakeGameContext();
@@ -133,22 +133,25 @@ namespace ClassicGTA.Tests
             var bj1 = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
             bj1.StartHand(100); // Cash = 900
             ctx.IsOnlineSession = true;
-            bj1.Hit();
-            Assert(!bj1.IsRoundActive && econ.Cash == 900, "Hit in Online must void round cleanly without mutating Online cash.");
+            BlackjackOutcome r1 = bj1.Hit();
+            Assert(!bj1.IsRoundActive && r1 == BlackjackOutcome.VoidedOnline && econ.Cash == 900 && bj1.PendingOnlineRefund == 100,
+                "Hit in Online must void as VoidedOnline and queue refund without mutating Online cash.");
 
             ctx.IsOnlineSession = false;
             var bj2 = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
             bj2.StartHand(100); // Cash = 800
             ctx.IsOnlineSession = true;
-            bj2.Stand();
-            Assert(!bj2.IsRoundActive && econ.Cash == 800, "Stand in Online must void round cleanly without settling.");
+            BlackjackOutcome r2 = bj2.Stand();
+            Assert(!bj2.IsRoundActive && r2 == BlackjackOutcome.VoidedOnline && econ.Cash == 800 && bj2.PendingOnlineRefund == 100,
+                "Stand in Online must void as VoidedOnline and queue refund.");
 
             ctx.IsOnlineSession = false;
             var bj3 = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
             bj3.StartHand(100); // Cash = 700
             ctx.IsOnlineSession = true;
-            bj3.DoubleDown();
-            Assert(!bj3.IsRoundActive && econ.Cash == 700, "DoubleDown in Online must void round cleanly without spending.");
+            BlackjackOutcome r3 = bj3.DoubleDown();
+            Assert(!bj3.IsRoundActive && r3 == BlackjackOutcome.VoidedOnline && econ.Cash == 700 && bj3.PendingOnlineRefund == 100,
+                "DoubleDown in Online must void as VoidedOnline and queue refund.");
         }
 
         // T-08 Fix: Multi-tick at pickup issues TaskFareEnterVehicle exactly once.
@@ -202,7 +205,7 @@ namespace ClassicGTA.Tests
             finally { DeleteDir(dir); }
         }
 
-        // C-2 & V-10 Fix: Session restart rollover pays 1 day, and large forward jumps clamp at 7-day cap.
+        // I-01 & V-10 Fix: Pure UTC timeline pays elapsed days across restarts, rejects backward clock, and caps at 7 days.
         private static void Assets_PassiveIncome_WorksAcrossSessionRestartAndCapsAt7Days()
         {
             string dir = CreateTempDir();
@@ -213,29 +216,38 @@ namespace ClassicGTA.Tests
                 var econ = new FakeEconomyService(200000);
                 var e1 = new AssetOwnershipEngine(new FakeGameContext(), econ, store, notify, 7, "slot_1");
                 e1.RegisterAsset(new AssetDefinition("business.club", "Club", AssetCategory.Business, 100000, 10000));
-                e1.TryPurchase("business.club");
-                e1.CollectPassiveIncome(10, true); // baseline day 10
+                e1.TryPurchase("business.club", 10); // baseline UTC day 10 stamped at purchase
 
-                // Simulate fresh session restart where session counter resets to 0
+                // Simulate fresh session restart 3 UTC days later -> pays exactly 3 days ($30,000)
                 var e2 = new AssetOwnershipEngine(new FakeGameContext(), econ, store, notify, 7, "slot_1");
                 e2.RegisterAsset(new AssetDefinition("business.club", "Club", AssetCategory.Business, 100000, 10000));
                 Assert(e2.LoadState(), "Reload should succeed.");
-                int paidRestart = e2.CollectPassiveIncome(0, true);
-                Assert(paidRestart == 10000, "Session restart rollover must pay 1 day ($10,000), got $" + paidRestart);
+                int paidRestart = e2.CollectPassiveIncome(13);
+                Assert(paidRestart == 30000, "3 UTC days elapsed must pay $30,000, got $" + paidRestart);
+
+                // Backward clock jump (day 5 < 13) -> must pay $0 without mutating baseline
+                PassiveIncomeResult backward = e2.CollectPassiveIncomeDetailed(5);
+                Assert(backward.Status == PassiveIncomeStatus.ClockMovedBackward && backward.AmountPaid == 0,
+                    "Backward clock jump must pay $0 and report ClockMovedBackward.");
 
                 // Jump 20 days forward -> must cap at 7 days ($70,000)
-                int paidCapped = e2.CollectPassiveIncome(20, true);
+                int paidCapped = e2.CollectPassiveIncome(33);
                 Assert(paidCapped == 70000, "Forward jump of 20 days must cap at 7 days ($70,000), got $" + paidCapped);
             }
             finally { DeleteDir(dir); }
         }
 
-        // R-1 Fix: First CollectPassiveIncome baseline with failing disk must NOT throw.
+        // R-1 & I-06 Fix: First CollectPassiveIncome baseline with failing disk must NOT throw and must report PersistenceFailed.
         private static void Assets_FirstCollectPersistFailure_DoesNotThrow()
         {
-            var e = new AssetOwnershipEngine(new FakeGameContext(), new FakeEconomyService(0), new FailingPersistenceStore(), new FakeNotificationService());
-            int paid = e.CollectPassiveIncome(5, true);
-            Assert(paid == 0, "Expected 0 without throwing on first-call persist failure.");
+            var econ = new FakeEconomyService(200000);
+            var store = new FailingPersistenceStore();
+            var e = new AssetOwnershipEngine(new FakeGameContext(), econ, store, new FakeNotificationService());
+            e.RegisterAsset(new AssetDefinition("business.club", "Club", AssetCategory.Business, 100000, 10000));
+            // Trigger baseline persist failure when no business is owned -> NoBusinessesOwned (still non-throwing)
+            PassiveIncomeResult res = e.CollectPassiveIncomeDetailed(5);
+            Assert(res.AmountPaid == 0 && res.Status == PassiveIncomeStatus.NoBusinessesOwned,
+                "Expected non-throwing NoBusinessesOwned with 0 paid.");
         }
 
         // R-4 Fix: Delayed weapon strip on tick N+1 after entering interior still restores.

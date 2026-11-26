@@ -191,18 +191,21 @@ namespace ClassicGTA.Core.Economy
         public bool LoadState()
         {
             string raw;
-            if (!_store.TryLoad(SaveFileName, s => !string.IsNullOrWhiteSpace(s) && s.StartsWith(SchemaHeader, StringComparison.Ordinal), out raw))
+            if (!_store.TryLoad(SaveFileName, ValidatePayload, out raw))
+            {
+                return false;
+            }
+
+            List<string> records;
+            if (!PersistenceCodec.TryParseStrict(raw, SchemaHeader, IsValidRecord, out records))
             {
                 return false;
             }
 
             _placed.Clear();
-            string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
+            for (int i = 0; i < records.Count; i++)
             {
-                string[] parts = lines[i].Trim().Split('|');
-                if (parts.Length != 7) continue;
-
+                string[] parts = records[i].Split('|');
                 float x, y, z, h;
                 if (float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
                     float.TryParse(parts[4], NumberStyles.Float, CultureInfo.InvariantCulture, out y) &&
@@ -227,20 +230,42 @@ namespace ClassicGTA.Core.Economy
 
         private void PersistState()
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(SchemaHeader);
+            var records = new List<string>(_placed.Count);
             for (int i = 0; i < _placed.Count; i++)
             {
                 PlacedFurniture p = _placed[i];
-                sb.Append(p.PlacementId).Append('|')
-                  .Append(p.SafehouseId).Append('|')
-                  .Append(p.PropId).Append('|')
-                  .Append(p.Position.X.ToString("R", CultureInfo.InvariantCulture)).Append('|')
-                  .Append(p.Position.Y.ToString("R", CultureInfo.InvariantCulture)).Append('|')
-                  .Append(p.Position.Z.ToString("R", CultureInfo.InvariantCulture)).Append('|')
-                  .AppendLine(p.HeadingDegrees.ToString("R", CultureInfo.InvariantCulture));
+                records.Add(
+                    p.PlacementId + "|" +
+                    p.SafehouseId + "|" +
+                    p.PropId + "|" +
+                    p.Position.X.ToString("R", CultureInfo.InvariantCulture) + "|" +
+                    p.Position.Y.ToString("R", CultureInfo.InvariantCulture) + "|" +
+                    p.Position.Z.ToString("R", CultureInfo.InvariantCulture) + "|" +
+                    p.HeadingDegrees.ToString("R", CultureInfo.InvariantCulture));
             }
-            _store.Save(SaveFileName, sb.ToString());
+            _store.Save(SaveFileName, PersistenceCodec.Serialize(SchemaHeader, records), ValidatePayload);
+        }
+
+        private static bool ValidatePayload(string text)
+        {
+            return PersistenceCodec.ValidateStrict(text, SchemaHeader, IsValidRecord);
+        }
+
+        private static bool IsValidRecord(string line)
+        {
+            string[] parts = line.Split('|');
+            if (parts.Length != 7 ||
+                string.IsNullOrWhiteSpace(parts[0]) ||
+                string.IsNullOrWhiteSpace(parts[1]) ||
+                string.IsNullOrWhiteSpace(parts[2]))
+            {
+                return false;
+            }
+            float x, y, z, h;
+            return float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
+                   float.TryParse(parts[4], NumberStyles.Float, CultureInfo.InvariantCulture, out y) &&
+                   float.TryParse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture, out z) &&
+                   float.TryParse(parts[6], NumberStyles.Float, CultureInfo.InvariantCulture, out h);
         }
     }
 }

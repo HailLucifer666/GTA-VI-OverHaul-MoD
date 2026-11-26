@@ -110,6 +110,16 @@ namespace ClassicGTA.Core.Economy
                 int pct = _nextRandom(-stock.MaxTickPercentMove, stock.MaxTickPercentMove);
                 ApplyPercentDelta(stock, pct);
             }
+
+            // A-02 Fix: Persist market prices and share counts together so prices cannot revert on restart.
+            try
+            {
+                PersistState();
+            }
+            catch (Exception ex)
+            {
+                _notifications.Log("[Stocks] AdvanceMarketTick persist failed: " + ex.Message);
+            }
         }
 
         public void ApplyContractShock(string targetSymbol, int targetPercentDelta, string rivalSymbol, int rivalPercentDelta)
@@ -220,17 +230,20 @@ namespace ClassicGTA.Core.Economy
         public bool LoadState()
         {
             string raw;
-            if (!_store.TryLoad(SaveFileName, s => !string.IsNullOrWhiteSpace(s) && s.StartsWith(SchemaHeader, StringComparison.Ordinal), out raw))
+            if (!_store.TryLoad(SaveFileName, ValidatePayload, out raw))
             {
                 return false;
             }
 
-            string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
+            List<string> records;
+            if (!PersistenceCodec.TryParseStrict(raw, SchemaHeader, IsValidRecord, out records))
             {
-                string[] parts = lines[i].Trim().Split('|');
-                if (parts.Length != 3) continue;
+                return false;
+            }
 
+            for (int i = 0; i < records.Count; i++)
+            {
+                string[] parts = records[i].Split('|');
                 StockQuote quote = GetQuote(parts[0]);
                 int price;
                 int shares;
@@ -246,14 +259,28 @@ namespace ClassicGTA.Core.Economy
 
         private void PersistState()
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(SchemaHeader);
+            var records = new List<string>(_stocks.Count);
             foreach (var kv in _stocks)
             {
                 StockQuote q = kv.Value;
-                sb.Append(q.Symbol).Append('|').Append(q.CurrentPrice).Append('|').AppendLine(q.SharesOwned.ToString());
+                records.Add(q.Symbol + "|" + q.CurrentPrice + "|" + q.SharesOwned);
             }
-            _store.Save(SaveFileName, sb.ToString());
+            _store.Save(SaveFileName, PersistenceCodec.Serialize(SchemaHeader, records), ValidatePayload);
+        }
+
+        private static bool ValidatePayload(string text)
+        {
+            return PersistenceCodec.ValidateStrict(text, SchemaHeader, IsValidRecord);
+        }
+
+        private static bool IsValidRecord(string line)
+        {
+            string[] parts = line.Split('|');
+            if (parts.Length != 3 || string.IsNullOrWhiteSpace(parts[0])) return false;
+            int price;
+            int shares;
+            return int.TryParse(parts[1], out price) && price > 0 &&
+                   int.TryParse(parts[2], out shares) && shares >= 0;
         }
 
         private static void ApplyPercentDelta(StockQuote stock, int percentDelta)

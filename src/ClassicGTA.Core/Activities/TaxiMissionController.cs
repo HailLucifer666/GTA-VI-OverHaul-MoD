@@ -21,6 +21,8 @@ namespace ClassicGTA.Core.Activities
         private const float ArrivalRadiusMeters = 12f;
         private const int BaseFareDollars = 50;
         private const int DollarsPerTenMeters = 2;
+        private const int PickupRetryIntervalMs = 10000;
+        private const int PickupTimeoutMs = 30000;
 
         private readonly IGameContext _context;
         private readonly ITaxiAdapter _adapter;
@@ -41,6 +43,8 @@ namespace ClassicGTA.Core.Activities
         private int _parTimeMs;
         private bool _fareSettled;
         private bool _enterTaskIssued;
+        private int _enterTaskIssuedMs;
+        private bool _enterTaskRetried;
 
         public string ModuleId { get { return "classic.activity.taxi"; } }
         public string DisplayName { get { return "Classic Taxi Side-Hustle"; } }
@@ -151,6 +155,8 @@ namespace ClassicGTA.Core.Activities
             _farePedHandle = 0;
             _blipHandle = 0;
             _enterTaskIssued = false;
+            _enterTaskIssuedMs = 0;
+            _enterTaskRetried = false;
             _fareSettled = false;
             _state = TaxiState.Idle;
             _notifications.Log("[Taxi] ABORT reason=" + reason);
@@ -194,6 +200,8 @@ namespace ClassicGTA.Core.Activities
             _dropoffPos = dropoff;
             _blipHandle = blip;
             _enterTaskIssued = false;
+            _enterTaskIssuedMs = 0;
+            _enterTaskRetried = false;
             _fareSettled = false;
             _adapter.SetRouteBlip(_blipHandle, _pickupPos);
             _state = TaxiState.Pickup;
@@ -223,7 +231,28 @@ namespace ClassicGTA.Core.Activities
             if (!_enterTaskIssued && _adapter.GetPlayerPosition().DistanceTo(_pickupPos) <= ArrivalRadiusMeters)
             {
                 _enterTaskIssued = true;
+                _enterTaskIssuedMs = gameTimeMs;
+                _enterTaskRetried = false;
                 _adapter.TaskFareEnterVehicle(_farePedHandle, _taxiVehicleHandle);
+                return;
+            }
+
+            if (_enterTaskIssued)
+            {
+                // A-01 Fix: Bounded pickup retry (10s) and timeout (30s) so a blocked fare never wedges the shift forever.
+                bool wrapped = gameTimeMs < _enterTaskIssuedMs;
+                int elapsed = wrapped ? PickupTimeoutMs : (gameTimeMs - _enterTaskIssuedMs);
+                if (elapsed >= PickupTimeoutMs)
+                {
+                    _notifications.Show("Taxi: Fare could not board in time; pickup cancelled.");
+                    AbortShift("PickupTimeout");
+                    return;
+                }
+                if (!_enterTaskRetried && elapsed >= PickupRetryIntervalMs)
+                {
+                    _enterTaskRetried = true;
+                    _adapter.TaskFareEnterVehicle(_farePedHandle, _taxiVehicleHandle);
+                }
             }
         }
 

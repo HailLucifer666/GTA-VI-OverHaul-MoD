@@ -111,18 +111,23 @@ namespace ClassicGTA.Core.Activities
         public bool LoadState()
         {
             string raw;
-            if (!_store.TryLoad(SaveFileName, s => !string.IsNullOrWhiteSpace(s) && s.StartsWith(SchemaHeader, StringComparison.Ordinal), out raw))
+            if (!_store.TryLoad(SaveFileName, ValidatePayload, out raw))
+            {
+                return false;
+            }
+
+            List<string> records;
+            if (!PersistenceCodec.TryParseStrict(raw, SchemaHeader, IsValidRecord, out records))
             {
                 return false;
             }
 
             _bestMedals.Clear();
-            string[] lines = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
+            for (int i = 0; i < records.Count; i++)
             {
-                string[] parts = lines[i].Trim().Split('|');
+                string[] parts = records[i].Split('|');
                 int ratingInt;
-                if (parts.Length == 2 && int.TryParse(parts[1], out ratingInt) && Enum.IsDefined(typeof(MedalRating), ratingInt))
+                if (int.TryParse(parts[1], out ratingInt) && Enum.IsDefined(typeof(MedalRating), ratingInt))
                 {
                     _bestMedals[parts[0]] = (MedalRating)ratingInt;
                 }
@@ -189,13 +194,27 @@ namespace ClassicGTA.Core.Activities
 
         private void PersistState()
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(SchemaHeader);
+            var records = new List<string>(_bestMedals.Count);
             foreach (var kv in _bestMedals)
             {
-                sb.Append(kv.Key).Append('|').AppendLine(((int)kv.Value).ToString());
+                records.Add(kv.Key + "|" + ((int)kv.Value));
             }
-            _store.Save(SaveFileName, sb.ToString());
+            _store.Save(SaveFileName, PersistenceCodec.Serialize(SchemaHeader, records), ValidatePayload);
+        }
+
+        private static bool ValidatePayload(string text)
+        {
+            return PersistenceCodec.ValidateStrict(text, SchemaHeader, IsValidRecord);
+        }
+
+        private static bool IsValidRecord(string line)
+        {
+            string[] parts = line.Split('|');
+            int ratingInt;
+            return parts.Length == 2 &&
+                   !string.IsNullOrWhiteSpace(parts[0]) &&
+                   int.TryParse(parts[1], out ratingInt) &&
+                   Enum.IsDefined(typeof(MedalRating), ratingInt);
         }
     }
 }

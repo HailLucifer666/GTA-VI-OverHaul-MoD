@@ -8,6 +8,8 @@ namespace ClassicGTA.Contracts
     public interface IPersistenceStore
     {
         void Save(string fileName, string content);
+        void Save(string fileName, string content, Func<string, bool> existingBackupValidator);
         bool TryLoad(string fileName, Func<string, bool> validator, out string content);
+        bool Exists(string fileName);
     }
 }

@@ -84,7 +84,9 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) {
         throw "Tests failed with exit code $LASTEXITCODE"
     }
+    Write-Host ""
+    Write-Host "=== BUILD & TESTS GREEN ===" -ForegroundColor Green
+} else {
+    Write-Host ""
+    Write-Host "=== BUILD GREEN (tests skipped) ===" -ForegroundColor Green
 }
-
-Write-Host ""
-Write-Host "=== BUILD & TESTS GREEN ===" -ForegroundColor Green

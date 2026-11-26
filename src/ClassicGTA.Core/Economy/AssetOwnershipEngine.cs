@@ -279,8 +279,8 @@ namespace ClassicGTA.Core.Economy
         {
             if (string.IsNullOrWhiteSpace(text)) return false;
             string trimmed = text.Trim();
-            return trimmed.StartsWith(SchemaHeader, StringComparison.Ordinal) &&
-                   trimmed.EndsWith(SchemaFooter, StringComparison.Ordinal);
+            // V-16 Fix: Accept both new END_OF_FILE-terminated ledgers and legacy SCHEMA=1 ledgers (auto-migrated on next save).
+            return trimmed.StartsWith(SchemaHeader, StringComparison.Ordinal);
         }
     }
 }

@@ -113,6 +113,13 @@ namespace ClassicGTA.Core.Module1
 
             if (!_zoneRestoreEnabled || _context.IsInVehicle)
             {
+                // V-19 Fix: Ensure global equip flag is cleared when toggling F8 off or entering a vehicle.
+                if (_wasInInterior)
+                {
+                    _weapons.SetCanEquipAllWeapons(false);
+                    _wasInInterior = false;
+                    _interiorRestoreRetriesRemaining = 0;
+                }
                 return;
             }
 
@@ -180,11 +187,10 @@ namespace ClassicGTA.Core.Module1
         public void Stop()
         {
             _isRunning = false;
-            if (_wasInInterior)
-            {
-                _weapons.SetCanEquipAllWeapons(false);
-                _wasInInterior = false;
-            }
+            // V-19 Fix: Unconditionally clear global equip flag on Stop/Dispose.
+            _weapons.SetCanEquipAllWeapons(false);
+            _wasInInterior = false;
+            _interiorRestoreRetriesRemaining = 0;
             // Never remove player weapons on Stop/Dispose; player may have earned or modified them.
             _notifications.Log("[Module1] Stopped.");
         }
@@ -258,6 +264,11 @@ namespace ClassicGTA.Core.Module1
             if (current != _weapons.UnarmedWeaponId)
             {
                 _lastEquippedWeaponId = current;
+                // V-11 Fix: Decrement retry window even while armed so deliberate holstering later is respected.
+                if (inInterior && _interiorRestoreRetriesRemaining > 0)
+                {
+                    _interiorRestoreRetriesRemaining--;
+                }
             }
             else if (inInterior && _interiorRestoreRetriesRemaining > 0 && _lastEquippedWeaponId != _weapons.UnarmedWeaponId)
             {

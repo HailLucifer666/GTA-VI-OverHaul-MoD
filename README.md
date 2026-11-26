@@ -2,10 +2,12 @@
 
 A modular, story-mode-only C# overhaul mod prototyping classic Grand Theft Auto sandbox mechanics in **GTA V Legacy (PC)** (`ScriptHookVDotNet3 3.6.0` + `LemonUI.SHVDN3 2.2.0`), built behind engine-agnostic behavioral interfaces (`ClassicGTA.Contracts` + `ClassicGTA.Core`) for future portability when **GTA VI (PC)** and a verified public scripting interface launch.
 
-> **Honest Status (2026-11-26):**
-> - **Offline Unit-Tested Suite:** `94/94` automated tests passing (`0 Errors, 0 Warnings`), plus repeatable mutation probes in `.\probe.ps1`.
-> - **GTA V Legacy Adapter (`ClassicGTA.GTAV.dll`):** Compiles cleanly and wires **6 LemonUI submenus (`F7`)** covering Weapons/Safe-Zones, 911 Dispatch, Taxi, 12-Level Emergency Jobs, Properties/Businesses/Submersible Summon/Stocks, Casino Blackjack, and Friends/Guard Dogs. **Not yet live-tested in-game** (awaiting GTA V Legacy download completion — Phase 6B).
-> - **GTA VI (PC) Adapter:** Does not exist yet (gated on official GTA VI PC release + public scripting interface).
+> **Honest Status (2026-11-27):**
+> - **Offline Unit-Tested Suite:** `98/98` unique automated tests passing (`0 Errors, 0 Warnings`), plus repeatable mutation probes in `.\probe.ps1`.
+> - **Feature Delivery Breakdown (26-item backlog):** `3` delivered end-to-end (`#8` Taxi, `#19` Pocket Arsenal/Zone Restore, `#25` 911 Dispatch), `11` reachable in the `F7` hub in some form, `6` core engines built/tested offline but unwired in GTA V (`#6`, `#7`, `#10`, `#17 [SUB]`, `#18`, `#20`), `9` not yet built (`#3`, `#11–#14`, `#16`, `#21–#23`).
+> - **Known Open Limitations (tracked for Phase 6B):**
+>   - `ClassicGTA.Adapter.GTAV` ships on **compile-only evidence** (zero adapter unit tests; not yet live-tested in GTA V Legacy).
+>   - `ClassicGTA_Assets.dat` is currently a **global Story Mode ledger** (not yet isolated per GTA V savegame slot).
 
 ## Quick Start (Zero `C:\` Writes)
 

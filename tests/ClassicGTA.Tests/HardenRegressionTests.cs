@@ -65,6 +65,10 @@ namespace ClassicGTA.Tests
             yield return Pair("92_EntityRegistry_NonPositiveHandleReturnsFalseWithoutThrowing", EntityRegistry_NonPositiveHandleReturnsFalseWithoutThrowing);
             yield return Pair("93_EntityRegistry_RefusesOwnedToBorrowedDemotionAndDropAllDoesNotDelete", EntityRegistry_RefusesOwnedToBorrowedDemotionAndDropAllDoesNotDelete);
             yield return Pair("94_EmergencyJobs_ResolvedOnDeadlineTick_SucceedsInsteadOfTimingOut", EmergencyJobs_ResolvedOnDeadlineTick_SucceedsInsteadOfTimingOut);
+            yield return Pair("95_OnlineLatch_AbortAfterOnlineNeverDeletesEntities", OnlineLatch_AbortAfterOnlineNeverDeletesEntities);
+            yield return Pair("96_CompanionAndPet_BudgetRefusalDeletesUntrackedSpawnAndBlip", CompanionAndPet_BudgetRefusalDeletesUntrackedSpawnAndBlip);
+            yield return Pair("97_Module1_ClearsEquipFlagOnExitF8OffAndStop_AndExpiresRetryWindowWhileArmed", Module1_ClearsEquipFlagOnExitF8OffAndStop_AndExpiresRetryWindowWhileArmed);
+            yield return Pair("98_Assets_LegacyLedgerWithoutFooterMigratesCleanly", Assets_LegacyLedgerWithoutFooterMigratesCleanly);
         }
 
         private static KeyValuePair<string, Action> Pair(string name, Action body)
@@ -121,19 +125,30 @@ namespace ClassicGTA.Tests
             Assert(bj.DealerVisibleTotal == 17, "Full dealer total (17) should be visible after Stand.");
         }
 
-        // S-10 Fix: Mid-round transition to Online blocks Hit/Stand/DoubleDown and cash settlement.
+        // V-18 & V-20 Fix: Mid-round transition to Online voids cleanly on Hit/Double/Stand without freezing or settling cash.
         private static void Blackjack_OnlineMidRoundBlocksHitStandAndDouble()
         {
             var ctx = new FakeGameContext();
             var econ = new FakeEconomyService(1000);
-            var bj = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
-            bj.StartHand(100); // Cash = 900
+            var bj1 = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
+            bj1.StartHand(100); // Cash = 900
             ctx.IsOnlineSession = true;
+            bj1.Hit();
+            Assert(!bj1.IsRoundActive && econ.Cash == 900, "Hit in Online must void round cleanly without mutating Online cash.");
 
-            bj.Hit();
-            bj.DoubleDown();
-            bj.Stand();
-            Assert(bj.IsRoundActive && econ.Cash == 900, "Online mid-round must block Hit/Double/Stand and settlement.");
+            ctx.IsOnlineSession = false;
+            var bj2 = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
+            bj2.StartHand(100); // Cash = 800
+            ctx.IsOnlineSession = true;
+            bj2.Stand();
+            Assert(!bj2.IsRoundActive && econ.Cash == 800, "Stand in Online must void round cleanly without settling.");
+
+            ctx.IsOnlineSession = false;
+            var bj3 = new BlackjackEngine(ctx, econ, Deck(5, 10, 6, 7, 9));
+            bj3.StartHand(100); // Cash = 700
+            ctx.IsOnlineSession = true;
+            bj3.DoubleDown();
+            Assert(!bj3.IsRoundActive && econ.Cash == 700, "DoubleDown in Online must void round cleanly without spending.");
         }
 
         // T-08 Fix: Multi-tick at pickup issues TaskFareEnterVehicle exactly once.
@@ -187,7 +202,7 @@ namespace ClassicGTA.Tests
             finally { DeleteDir(dir); }
         }
 
-        // C-2 Fix: Session restart rollover pays instead of freezing forever.
+        // C-2 & V-10 Fix: Session restart rollover pays 1 day, and large forward jumps clamp at 7-day cap.
         private static void Assets_PassiveIncome_WorksAcrossSessionRestartAndCapsAt7Days()
         {
             string dir = CreateTempDir();
@@ -205,8 +220,12 @@ namespace ClassicGTA.Tests
                 var e2 = new AssetOwnershipEngine(new FakeGameContext(), econ, store, notify, 7, "slot_1");
                 e2.RegisterAsset(new AssetDefinition("business.club", "Club", AssetCategory.Business, 100000, 10000));
                 Assert(e2.LoadState(), "Reload should succeed.");
-                int paid = e2.CollectPassiveIncome(0, true);
-                Assert(paid == 10000, "Session restart rollover must pay 1 day ($10,000), got $" + paid);
+                int paidRestart = e2.CollectPassiveIncome(0, true);
+                Assert(paidRestart == 10000, "Session restart rollover must pay 1 day ($10,000), got $" + paidRestart);
+
+                // Jump 20 days forward -> must cap at 7 days ($70,000)
+                int paidCapped = e2.CollectPassiveIncome(20, true);
+                Assert(paidCapped == 70000, "Forward jump of 20 days must cap at 7 days ($70,000), got $" + paidCapped);
             }
             finally { DeleteDir(dir); }
         }
@@ -281,6 +300,106 @@ namespace ClassicGTA.Tests
             job.SlowTick(66000);
             Assert(job.IsJobActive && job.CurrentLevel == 2 && econ.Cash == 50,
                 "Wave resolved on deadline tick must advance to Level 2 instead of timing out.");
+        }
+
+        // V-13 Fix: Latching Online BEFORE scheduler Dispose guarantees ZERO DeleteEntity calls on abort.
+        private static void OnlineLatch_AbortAfterOnlineNeverDeletesEntities()
+        {
+            var ctx = new FakeGameContext();
+            var cleanup = new FakeCleanupAdapter();
+            var reg = new EntityOwnershipRegistry(cleanup);
+            var notify = new FakeNotificationService();
+            var scheduler = new ModuleScheduler(notify);
+            var companion = new CompanionHangoutController(ctx, new FakeCompanionAdapter(), reg, notify);
+            scheduler.Register(companion);
+            scheduler.StartAll();
+            companion.CallCompanion("buddy.lamar");
+
+            ctx.IsOnlineSession = true;
+            reg.LatchOnlineSession();
+            scheduler.Dispose();
+
+            Assert(cleanup.DeletedEntities.Count == 0 && cleanup.DeletedBlips.Count == 0,
+                "Online abort MUST NOT call DeleteEntity or DeleteBlip.");
+            Assert(reg.TrackedEntityCount == 0 && reg.TrackedBlipCount == 0, "Registry must be empty.");
+        }
+
+        // V-03 Fix: Companion & Pet budget refusal deletes untracked ped and blip immediately.
+        private static void CompanionAndPet_BudgetRefusalDeletesUntrackedSpawnAndBlip()
+        {
+            var cleanup = new FakeCleanupAdapter();
+            var reg = new EntityOwnershipRegistry(cleanup, 1);
+            reg.TryTrackEntity(1, "other", EntityOwnership.Owned); // Fill cap=1
+
+            var companion = new CompanionHangoutController(new FakeGameContext(), new FakeCompanionAdapter(), reg, new FakeNotificationService());
+            companion.Start();
+            Assert(!companion.CallCompanion("buddy.lamar"), "Companion should fail when cap is full.");
+            Assert(cleanup.DeletedEntities.Count == 1 && cleanup.DeletedBlips.Count == 1,
+                "Refused companion spawn must delete untracked ped and blip.");
+
+            var dir = CreateTempDir();
+            try
+            {
+                var notify = new FakeNotificationService();
+                var pets = new PetCompanionController(new FakeGameContext(), new FakePetAdapter(), new FakeEconomyService(5000), reg, new AtomicFileStore(dir, notify), notify);
+                pets.RegisterBreed("dog.rottweiler", 1000);
+                pets.Start();
+                pets.TryBuyBreed("dog.rottweiler");
+
+                Assert(!pets.SummonPet("dog.rottweiler"), "Pet summon should fail when cap is full.");
+                Assert(cleanup.DeletedEntities.Count == 2 && cleanup.DeletedBlips.Count == 2,
+                    "Refused pet spawn must delete untracked pet and blip.");
+            }
+            finally { DeleteDir(dir); }
+        }
+
+        // V-11, V-19, V-20 Fix: Clears equip flag on F8 off & Stop, and expires retry window while armed.
+        private static void Module1_ClearsEquipFlagOnExitF8OffAndStop_AndExpiresRetryWindowWhileArmed()
+        {
+            var ctx = new FakeGameContext();
+            var weapons = new FakeWeaponService();
+            var mod = new WeaponAndZoneController(ctx, weapons, new FakeNotificationService(), new WeaponAndZoneConfig());
+            mod.Start();
+
+            weapons.OwnedWeapons.Add(FakeWeaponService.Carbine);
+            weapons.CurrentWeaponId = FakeWeaponService.Carbine;
+            weapons.InteriorId = 42;
+
+            // Tick 10 times inside interior while armed -> 8-tick retry window must expire!
+            for (int i = 0; i < 10; i++) mod.SlowTick(1000 + i * 250);
+
+            // Player deliberately holsters weapon after window expired -> must NOT be overridden!
+            weapons.CurrentWeaponId = FakeWeaponService.Unarmed;
+            mod.SlowTick(5000);
+            Assert(weapons.SelectWeaponCalls == 0, "Deliberate holster after retry window must not be overridden.");
+
+            // Toggling F8 off inside interior must clear SetCanEquipAllWeapons(false)
+            mod.OnKeyPressed(GameKey.F8);
+            mod.SlowTick(5500);
+            Assert(weapons.CanEquipAllFalseCalls >= 1, "Expected SetCanEquipAllWeapons(false) on F8 toggle off.");
+
+            int beforeStop = weapons.CanEquipAllFalseCalls;
+            mod.Stop();
+            Assert(weapons.CanEquipAllFalseCalls > beforeStop, "Expected unconditional SetCanEquipAllWeapons(false) on Stop.");
+        }
+
+        // V-16 Fix: Legacy SCHEMA=1 file without END_OF_FILE footer loads cleanly instead of being discarded.
+        private static void Assets_LegacyLedgerWithoutFooterMigratesCleanly()
+        {
+            string dir = CreateTempDir();
+            try
+            {
+                var notify = new FakeNotificationService();
+                var store = new AtomicFileStore(dir, notify);
+                // Write a legacy v0.6.0 ledger (no SLOT=, no END_OF_FILE)
+                store.Save("ClassicGTA_Assets.dat", "SCHEMA=1\nLAST_DAY=5\nOWNED=sub.kraken\n");
+
+                var engine = new AssetOwnershipEngine(new FakeGameContext(), new FakeEconomyService(0), store, notify, 7, "default");
+                engine.RegisterAsset(new AssetDefinition("sub.kraken", "Kraken", AssetCategory.Submarine, 250000));
+                Assert(engine.LoadState() && engine.IsOwned("sub.kraken"),
+                    "Legacy SCHEMA=1 ledger without footer MUST load cleanly.");
+            }
+            finally { DeleteDir(dir); }
         }
     }
 }

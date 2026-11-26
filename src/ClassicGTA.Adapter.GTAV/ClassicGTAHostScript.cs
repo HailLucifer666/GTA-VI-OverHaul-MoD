@@ -64,6 +64,7 @@ namespace ClassicGTA.Adapter.GTAV
             _petModule = new PetCompanionController(_context, new GtaVPetAdapter(), economy, _registry, store, _notifications);
             SeedDefaultPets(_petModule);
 
+            // V-01 Honest Note: Global Story Mode ledger until Phase 6B live save-slot fingerprinting.
             string slotId = "gtav_story_default";
             _assetsEngine = new AssetOwnershipEngine(_context, economy, store, _notifications, 7, slotId);
             SeedDefaultAssets(_assetsEngine);
@@ -162,15 +163,16 @@ namespace ClassicGTA.Adapter.GTAV
             Aborted -= OnAborted;
 
             _uiPool.HideAll();
-            _scheduler.Dispose();
 
-            // S-06 Fix: Never call DeleteEntity on stale handles if abort occurs during Online transition.
+            // V-13 Fix: Latch Online safety BEFORE _scheduler.Dispose() so module Stop() calls can NEVER delete recycled Online handles.
             if (_context.IsOnlineSession)
             {
-                _registry.DropAllWithoutDeleting();
+                _registry.LatchOnlineSession();
+                _scheduler.Dispose();
             }
             else
             {
+                _scheduler.Dispose();
                 _registry.CleanupAll(false);
             }
         }
@@ -314,10 +316,19 @@ namespace ClassicGTA.Adapter.GTAV
             }
         }
 
-        private void SafeLoad(Action loadAction, string label)
+        private void SafeLoad(Func<bool> loadAction, string label)
         {
-            try { loadAction(); }
-            catch (Exception ex) { _notifications.Log("[Host] SafeLoad failed for " + label + ": " + ex.Message); }
+            try
+            {
+                if (!loadAction())
+                {
+                    _notifications.Log("[Host] SafeLoad: no existing valid state loaded for " + label + " (fresh start).");
+                }
+            }
+            catch (Exception ex)
+            {
+                _notifications.Log("[Host] SafeLoad failed for " + label + ": " + ex.Message);
+            }
         }
 
         private NativeMenu AddSubmenu(NativeMenu parent, string title, string description)

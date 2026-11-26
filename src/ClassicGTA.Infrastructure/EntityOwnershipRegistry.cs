@@ -23,6 +23,9 @@ namespace ClassicGTA.Infrastructure
         private readonly Dictionary<int, EntityRecord> _entities = new Dictionary<int, EntityRecord>();
         private readonly Dictionary<int, string> _blips = new Dictionary<int, string>();
         private readonly Dictionary<int, string> _cameras = new Dictionary<int, string>();
+        private bool _onlineLatched;
+
+        public bool IsOnlineLatched { get { return _onlineLatched; } }
 
         public int TrackedEntityCount { get { return _entities.Count; } }
         public int TrackedBlipCount { get { return _blips.Count; } }
@@ -77,6 +80,32 @@ namespace ClassicGTA.Infrastructure
             return true;
         }
 
+        public void DropOwnerWithoutDeleting(string ownerModuleId)
+        {
+            if (string.IsNullOrWhiteSpace(ownerModuleId)) return;
+
+            var entKeys = new List<int>();
+            foreach (var kv in _entities)
+            {
+                if (string.Equals(kv.Value.OwnerModuleId, ownerModuleId, StringComparison.OrdinalIgnoreCase)) entKeys.Add(kv.Key);
+            }
+            for (int i = 0; i < entKeys.Count; i++) _entities.Remove(entKeys[i]);
+
+            var blipKeys = new List<int>();
+            foreach (var kv in _blips)
+            {
+                if (string.Equals(kv.Value, ownerModuleId, StringComparison.OrdinalIgnoreCase)) blipKeys.Add(kv.Key);
+            }
+            for (int i = 0; i < blipKeys.Count; i++) _blips.Remove(blipKeys[i]);
+
+            var camKeys = new List<int>();
+            foreach (var kv in _cameras)
+            {
+                if (string.Equals(kv.Value, ownerModuleId, StringComparison.OrdinalIgnoreCase)) camKeys.Add(kv.Key);
+            }
+            for (int i = 0; i < camKeys.Count; i++) _cameras.Remove(camKeys[i]);
+        }
+
         public void DropAllWithoutDeleting()
         {
             // Used on SP->Online transition: drop stale pool handles without ever deleting recycled Online entities.
@@ -85,14 +114,21 @@ namespace ClassicGTA.Infrastructure
             _cameras.Clear();
         }
 
+        public void LatchOnlineSession()
+        {
+            // V-13 Fix: Permanently latch Online safety before scheduler Dispose() so no DeleteEntity can ever fire.
+            _onlineLatched = true;
+            DropAllWithoutDeleting();
+        }
+
         public void DeleteUntrackedEntity(int handle)
         {
-            if (handle > 0) _adapter.DeleteEntity(handle);
+            if (!_onlineLatched && handle > 0) _adapter.DeleteEntity(handle);
         }
 
         public void DeleteUntrackedBlip(int blipHandle)
         {
-            if (blipHandle > 0) _adapter.DeleteBlip(blipHandle);
+            if (!_onlineLatched && blipHandle > 0) _adapter.DeleteBlip(blipHandle);
         }
 
         public void TrackBlip(int blipHandle, string ownerModuleId)
@@ -112,6 +148,11 @@ namespace ClassicGTA.Infrastructure
         public void CleanupOwner(string ownerModuleId, bool releaseOwnedInsteadOfDelete = false)
         {
             if (string.IsNullOrWhiteSpace(ownerModuleId)) return;
+            if (_onlineLatched)
+            {
+                DropOwnerWithoutDeleting(ownerModuleId);
+                return;
+            }
 
             CleanupCameras(ownerModuleId);
             CleanupBlips(ownerModuleId);
@@ -120,6 +161,12 @@ namespace ClassicGTA.Infrastructure
 
         public void CleanupAll(bool releaseOwnedInsteadOfDelete = false)
         {
+            if (_onlineLatched)
+            {
+                DropAllWithoutDeleting();
+                return;
+            }
+
             CleanupCameras(null);
             CleanupBlips(null);
             CleanupEntities(null, releaseOwnedInsteadOfDelete);

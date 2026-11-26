@@ -90,6 +90,16 @@ namespace ClassicGTA.Core.Module2
                 return;
             }
 
+            if (_context.IsOnlineSession)
+            {
+                // V-04 Fix: Drop dispatch handles without deleting and reset to Idle on SP->Online transition.
+                _registry.DropOwnerWithoutDeleting(ModuleId);
+                _vehicleHandle = 0;
+                _responderHandle = 0;
+                _state = DispatchState.Idle;
+                return;
+            }
+
             if (!IsSafeGameplayState())
             {
                 return;

@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="title desc">
+  <title id="title">Classic GTA Overhaul — a community mod for GTA V</title>
+  <desc id="desc">Neon Vice City style banner: a magenta sunset, a scrolling synthwave grid and the words Classic GTA Overhaul.</desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0B0614"/>
+      <stop offset="0.48" stop-color="#241035"/>
+      <stop offset="0.74" stop-color="#54184A"/>
+      <stop offset="1" stop-color="#0D0718"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFD37A"/>
+      <stop offset="0.4" stop-color="#FF8A3D"/>
+      <stop offset="0.75" stop-color="#FF3FA4" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#FF3FA4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22D3EE" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#22D3EE" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-15%" y="-40%" width="130%" height="180%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="sunClip"><rect x="0" y="0" width="1280" height="196"/></clipPath>
+  </defs>
+
+  <rect width="1280" height="300" fill="url(#sky)"/>
+
+  <!-- Sun, pulsing slowly, clipped at the horizon -->
+  <g clip-path="url(#sunClip)">
+    <circle cx="640" cy="196" r="148" fill="url(#sun)">
+      <animate attributeName="opacity" values="0.82;1;0.82" dur="7s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Skyline silhouette -->
+  <g fill="#080510">
+    <rect x="0" y="168" width="58" height="132"/>
+    <rect x="52" y="150" width="34" height="150"/>
+    <rect x="92" y="176" width="48" height="124"/>
+    <rect x="148" y="158" width="26" height="142"/>
+    <rect x="188" y="182" width="64" height="118"/>
+    <rect x="262" y="166" width="30" height="134"/>
+    <rect x="300" y="188" width="52" height="112"/>
+    <rect x="366" y="172" width="24" height="128"/>
+    <rect x="900" y="170" width="40" height="130"/>
+    <rect x="946" y="152" width="28" height="148"/>
+    <rect x="982" y="180" width="54" height="120"/>
+    <rect x="1044" y="160" width="30" height="140"/>
+    <rect x="1082" y="176" width="46" height="124"/>
+    <rect x="1136" y="150" width="26" height="150"/>
+    <rect x="1170" y="172" width="58" height="128"/>
+    <rect x="1234" y="158" width="46" height="142"/>
+  </g>
+
+  <!-- Horizon and grid -->
+  <g stroke="#FF3FA4" stroke-width="1" opacity="0.45">
+    <line x1="64" y1="196" x2="0" y2="300"/>
+    <line x1="182" y1="196" x2="120" y2="300"/>
+    <line x1="300" y1="196" x2="252" y2="300"/>
+    <line x1="420" y1="196" x2="386" y2="300"/>
+    <line x1="540" y1="196" x2="516" y2="300"/>
+    <line x1="740" y1="196" x2="764" y2="300"/>
+    <line x1="860" y1="196" x2="894" y2="300"/>
+    <line x1="980" y1="196" x2="1028" y2="300"/>
+    <line x1="1098" y1="196" x2="1160" y2="300"/>
+    <line x1="1216" y1="196" x2="1280" y2="300"/>
+  </g>
+  <g stroke="#FF3FA4" stroke-width="1" opacity="0.28">
+    <line x1="0" y1="210" x2="1280" y2="210"/>
+    <line x1="0" y1="226" x2="1280" y2="226"/>
+    <line x1="0" y1="245" x2="1280" y2="245"/>
+    <line x1="0" y1="266" x2="1280" y2="266"/>
+    <line x1="0" y1="290" x2="1280" y2="290"/>
+  </g>
+
+  <!-- Travelling grid light -->
+  <rect x="0" y="198" width="1280" height="2" fill="#FF3FA4" opacity="0.7">
+    <animate attributeName="y" values="198;298;198" dur="5.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.15;0.8;0.15" dur="5.5s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Text -->
+  <text x="640" y="88" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="17" letter-spacing="9" fill="#FF8A3D">A COMMUNITY MOD FOR GTA V</text>
+
+  <text x="640" y="150" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="60" font-weight="800" letter-spacing="2" fill="#FFFFFF" filter="url(#glow)">
+    CLASSIC GTA OVERHAUL
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="4.5s" repeatCount="indefinite"/>
+  </text>
+
+  <text x="640" y="184" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="18" letter-spacing="6" fill="#22D3EE">THE CLASSIC SANDBOX, REBUILT IN THE OPEN</text>
+
+  <!-- Scanline -->
+  <rect x="0" y="0" width="1280" height="5" fill="url(#scan)" opacity="0.55">
+    <animate attributeName="y" values="-5;300" dur="8s" repeatCount="indefinite"/>
+  </rect>
+</svg>

@@ -1,42 +1,140 @@
-# Classic GTA Overhaul Mod
+<div align="center">
+  <img src="docs/media/banner.svg" alt="Classic GTA Overhaul — neon Vice City style banner" width="100%">
 
-A modular, story-mode-only C# overhaul mod prototyping classic Grand Theft Auto sandbox mechanics in **GTA V Legacy (PC)** (`ScriptHookVDotNet3 3.6.0` + `LemonUI.SHVDN3 2.2.0`), built behind engine-agnostic behavioral interfaces (`ClassicGTA.Contracts` + `ClassicGTA.Core`) for future portability when **GTA VI (PC)** and a verified public scripting interface launch.
+  <h1>Classic GTA Overhaul</h1>
 
-> **Honest Status (2026-11-27 — `v0.6.3-hardened`):**
-> - **Automated Test Suite:** `116/116` unique automated tests passing (`0 Errors, 0 Warnings`), compiling and executing directly against `ClassicGTA.GTAV.dll` (Core + Infrastructure + Adapter Seam tests), plus `12/12` repeatable `/kee` sabotage probes in `.\probe.ps1`.
-> - **Authoritative Feature Breakdown (26-item backlog):**
->   - **Live GTA V Verified:** `0` (all runtime native behavior, frame time, hot-reload stability, and 30-minute soak remain **Phase 6B pending**).
->   - **Core + Adapter Seam Tested & Menu-Wired (`F7` Hub / Hotkeys):** `11` (`#1` Safehouse Ledger, `#2` Passive Business UTC Income, `#4` Kraken Water Delivery, `#5` LCN Stocks, `#8` Taxi, `#9` Emergency Side-Jobs, `#15` Blackjack, `#19` Pocket Arsenal & Interior Zone Restore, `#24` Companion Hangout, `#25` 911 Dispatch, `#26` Guard Dogs).
->   - **Core Unit-Tested Only (Unwired in GTA V):** `6` (`#6 [SUB]`, `#7`, `#10`, `#17 [SUB]`, `#18`, `#20`).
->   - **Not Yet Built:** `9` (`#3`, `#11–#14`, `#16`, `#21–#23`).
-> - **Economy & Persistence Architecture:**
->   - Dedicated per-slot atomic **Mod Wallet** (`ClassicGTA_Wallet_<slot>.dat`) paired with per-slot **Asset Ledger** (`ClassicGTA_Assets_<slot>.dat`) eliminates GTA Story Mode save/load cash-vs-ownership desync by construction, with automatic migration from legacy v0.6.0 `ClassicGTA_Assets.dat`.
->   - All 7 persisted engines use strict `PersistenceCodec` (`SCHEMA` + per-line grammar + `RECORD_COUNT` + `END_OF_FILE`) and validated backup rotation.
-> - **Remaining Gate Before Release / Known-Good Tag:**
->   - **Phase 6B (Live GTA V Legacy Session):** Native execution, entity cleanup, 30 hot-reloads, 30-minute soak, and frame-time telemetry must be measured in-game before any release or known-good runtime claim.
+  <p><b>The classic GTA sandbox, rebuilt in the open.</b><br>
+  A community-built C# mod for <b>GTA V Legacy (PC)</b> today — and for <b>GTA VI</b> the day PC modding opens.</p>
 
-## Quick Start (Zero `C:\` Writes)
+  <p>
+    <img src="docs/media/badges/build.svg" alt="build: passing" height="28">
+    <img src="docs/media/badges/tests.svg" alt="tests: 116/116" height="28">
+    <img src="docs/media/badges/status.svg" alt="live in-game: Phase 6B pending" height="28">
+    <img src="docs/media/badges/license.svg" alt="license: GPL-3.0" height="28">
+  </p>
+</div>
+
+<div align="center">
+  <img src="docs/media/hero-vice-city.jpg" alt="Classic GTA Overhaul key art: two characters in a neon Vice City sunset, with sports cars, a police cruiser and a skyline" width="900">
+</div>
+
+<p align="center"><sub>Unofficial fan project. Not affiliated with, endorsed by or sponsored by Rockstar Games or Take-Two Interactive. No game assets are redistributed.</sub></p>
+
+---
+
+## What this is
+
+The old sandbox games let you do everything. Buy a safehouse. Run a taxi shift. Call the cops, then outrun them. Waste an afternoon at the casino. Adopt a dog that actually follows you around.
+
+This project rebuilds those systems — the ones modern entries trimmed back — as **modular C# engines with real tests**, wired into a single in-game hub. It is built by players, in the open, one tested system at a time.
+
+Two promises shape every decision:
+
+- **It runs on GTA V today.** No waiting for a new game. Every system compiles against the real `ScriptHookVDotNet3` and `LemonUI`, and the whole suite runs offline in seconds.
+- **It is built for the next game.** The gameplay logic never references `GTA.*`. When GTA VI PC modding exists, the adapter is the only layer that has to change — not the 100+ systems behind it.
+
+## What's in the build today
+
+**Legend:** ✅ wired into the `F7` hub · 🧪 engine built and tested, not yet wired · 🔒 still under wraps
+
+| | Feature | What it does | Status |
+|:--:|:--|:--|:--:|
+| 🚕 | **Taxi Shift** | Pick up fares, beat the par time, earn the distance and speed tip. Your own cab is never deleted. | ✅ |
+| 🚨 | **911 Dispatch** | Police, ambulance or fire crew spawn on a nearby road, drive to you and do their job on arrival. | ✅ |
+| 🔫 | **Pocket Arsenal + Safe Zones** | Every valid weapon, max ammo, non-destructive. Combat controls and your owned weapon come back inside restricted interiors. | ✅ |
+| 📈 | **LCN Stocks** | Buy, sell and hold shares; prices move on a market tick and your portfolio survives a reload. | ✅ |
+| 🃏 | **Blackjack** | Rules-complete 21 with soft aces, doubles and 3:2 naturals — played with story-mode cash, never real money. | ✅ |
+| 🐕 | **Guard Dogs** | Buy a dog, summon it, and command follow, sit or guard. It walks off on its own when dismissed. | ✅ |
+
+**Also wired:** 🏠 safehouse ownership · 🏢 passive business income · 🚤 Kraken delivery · 🚑 emergency side-jobs · 🤝 companion hangouts
+
+**In the lab** (built and unit-tested, waiting for their adapter): in-game web hub · furniture placement · rampages · mission medals · first-person camera · RPG skills
+
+**Classified** — three systems stay under wraps until the first live session. No spoilers, no promises.
+
+## Under the hood
+
+<div align="center">
+  <img src="docs/media/architecture.svg" alt="Four layers: contracts, core, infrastructure and a swappable GTA adapter, with animated data flow" width="900">
+</div>
+
+Game logic never references `GTA.*` or `LemonUI.*`. That is not a style preference — the build enforces it, and it is why the mod can outlive the game it currently runs on.
+
+## The honest bit
+
+**Nothing has run inside GTA V yet.** The suite is green, the adapter compiles, the seams are tested — but live behaviour is unmeasured. We would rather say that than pretend.
+
+That is what **Phase 6B** is for:
+
+- [ ] First in-game load on GTA V Legacy
+- [ ] 30 hot reloads without an entity or blip leak
+- [ ] 30-minute soak with frame-time telemetry
+- [ ] Entity high-water mark recorded
+- [ ] Every wired feature touched once, by hand
+
+If you own **GTA V Legacy on PC** and can install ScriptHookV, you are the single most useful person in this project right now. Open an issue titled *"Phase 6B test run"* and we will walk you through the protocol.
+
+## Build it
 
 ```powershell
-.\build.ps1   # SHA-256 verified E:\-only restore of SHVDN3 3.6.0 + LemonUI 2.2.0, compiles all 5 projects, runs 116/116 tests
-.\probe.ps1   # Runs 12 scripted /kee mutation probes (confirms RED on sabotage, then restores GREEN)
+# Windows · .NET Framework 4.8 · Visual Studio Build Tools
+.\build.ps1     # restores pinned packages, builds 5 projects, runs 116/116 tests
+.\probe.ps1     # 12 sabotage probes: break a guard, watch the right test go red, restore
 ```
 
-## Player Prerequisites (GTA V Legacy Story Mode Only)
-- `ScriptHookV` + `ScriptHookVDotNet3` installed in the **GTA V root folder** (never copy `ScriptHookVDotNet3.dll` into `scripts\`).
-- Copy `ClassicGTA.GTAV.dll`, `ClassicGTA.Core.dll`, `ClassicGTA.Contracts.dll`, `ClassicGTA.Infrastructure.dll`, and `LemonUI.SHVDN3.dll` into `GTA V\scripts\`.
+No global installs, no package cache outside the repo. `build.ps1` pulls the two pinned dependencies into `.packages\` on first run and verifies their SHA-256.
 
-## Repository Layout
+Player install steps and developer setup live in [`docs/BUILDING.md`](docs/BUILDING.md).
 
-- `PROGRESS_TRACKER.md` — Cross-session resume tracker (phase status, test counts, probes).
-- `build.ps1` / `probe.ps1` — Reproducible SHA-256-verified build, test, and 12-probe mutation runners.
-- `src/ClassicGTA.Contracts/` — Engine-agnostic behavioral interfaces, DTOs, and strict `PersistenceCodec`.
-- `src/ClassicGTA.Core/` — Pure C# gameplay engines + `ModWalletEconomyService` (zero `GTA.*` / `LemonUI.*` references).
-- `src/ClassicGTA.Infrastructure/` — Fault-isolated scheduler, 3-way entity/blip/camera registry, atomic validated 3× backup store, throttled INI.
-- `src/ClassicGTA.Adapter.GTAV/` — SHVDN3 3.6.0 + LemonUI 2.2.0 host (`F7` hub, `F8`/`F9`/`F10` hotkeys) + testable host/adapter seams (`ClassicGTAHostController`, `UiLoopGuard`, `KrakenDeliveryController`, `RoadSpawnValidator`, `FireExtinguishEvaluator`, `PassiveIncomeClock`, `OnlineDetectionGuard`).
-- `tests/ClassicGTA.Tests/` — Zero-dependency automated test runner (`116/116` unique tests + test-count & doc-consistency guards).
+## Join the crew
 
-## Legal & Safety
+This is a community project, not a solo release. There is room for every skill level.
 
-- **Story Mode Only:** No network or anti-cheat interaction; fail-closed `IsOnlineSession` blocks all actions in multiplayer (logging and notifying once on native failure).
-- **Non-Commercial & Native Assets Only:** Uses only vanilla game models; zero cross-title asset ripping and zero affiliation with Rockstar Games / Take-Two Interactive.
+| You bring | You would work on |
+|:--|:--|
+| **C# gameplay** | State machines, economy rules, edge cases, tests. |
+| **SHVDN / native research** | Spawning, tasks, blips, cameras — and proving behaviour in-game. |
+| **LemonUI / UX** | The `F7` hub, menus, notifications, readability. |
+| **3D / art** | Icons, key art, trailers once footage exists. |
+| **QA** | Test plans, regression passes, the Phase 6B protocol. |
+| **Docs / video** | Guides, changelogs, clips, community answers. |
+
+**Your first PR in four steps:**
+
+1. Pick an issue tagged `good first issue` — or open one that describes what you want to build.
+2. Branch, make the change, and **ship a test with it**. A fix without a test is a claim, not a fix.
+3. Run `.\build.ps1` and `.\probe.ps1` locally. Both must be green.
+4. Open the PR and fill in the template.
+
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before you start. Be decent to each other — [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+
+<!-- Community invite goes here once the Discord/Matrix link exists. -->
+**Community:** use the **Discussions** tab to introduce yourself, ask questions or claim work.
+
+## Roadmap
+
+| Phase | Goal | State |
+|:--|:--|:--:|
+| **Core** | Engine-agnostic systems, economy, persistence, 116 tests, 12 probes | ✅ Done |
+| **Phase 6B** | Live GTA V Legacy verification: reloads, soak, frame time, leaks | 🔜 Next |
+| **GTA VI** | Swap the adapter when a public PC scripting interface ships | ⏳ Waiting on the game |
+
+## Support the project
+
+This mod is **free and open source, forever** — no paywalls, no locked features, no paid tier. The way to support it is to use it, break it, and tell us what broke.
+
+⭐ Star the repo · 🐞 Report a bug · 🧪 Run the Phase 6B protocol · 💬 Answer someone's question
+
+## Credits & legal
+
+- **License:** [GPL-3.0](LICENSE). Fork it, study it, improve it — keep it open.
+- **Story Mode only.** No network or anti-cheat interaction; the mod hard-blocks itself in multiplayer.
+- **Vanilla assets only.** No ripped models, no cross-title asset copying, no pre-release material.
+- **No real-money gambling.** Casino play uses story-mode cash.
+- **Key art** is AI-assisted and de-branded for this fan project. All trademarks belong to their owners.
+
+<div align="center">
+  <br>
+  <b>Built by the community. For the community.</b><br>
+  <sub>If you have ever wanted the old sandbox back — this is how we get it.</sub>
+</div>

@@ -1,0 +1,76 @@
+name: Bug report
+description: Something in the mod did not behave the way it should.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing. Please never attach GTA game files, save files, or pre-release material.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what actually happened.
+      placeholder: Pressed F9 while in a police car; expected a 911 unit; nothing spawned.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load a Story Mode save
+        2. Press F7, open 911 Dispatch
+        3. Choose Police Backup
+        4. Nothing appears and the log shows ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: edition
+    attributes:
+      label: GTA V edition
+      options:
+        - Legacy (supported)
+        - Enhanced (not supported yet)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: game-version
+    attributes:
+      label: GTA5.exe version
+      placeholder: e.g. 1.0.3411.0
+    validations:
+      required: true
+
+  - type: input
+    id: shvdn
+    attributes:
+      label: ScriptHookV and ScriptHookVDotNet3 versions
+      placeholder: e.g. ScriptHookV 1.0.3411.0, SHVDN3 3.6.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt
+      description: The last lines of `ClassicGTA_Data\ClassicGTA.log`.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: I was in Story Mode, not GTA Online.
+          required: true
+        - label: I have not attached any game file or pre-release material.
+          required: true

@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest a system, an improvement, or a fix to how something feels.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas for classic sandbox systems are very welcome. Please describe the player experience, not just the implementation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing or wrong today
+      description: What does the player want to do that they cannot do now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like to happen
+      description: Describe the behaviour. Exact numbers are not needed.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Where do you think this belongs?
+      options:
+        - Gameplay engine (Core)
+        - Infrastructure (scheduler, persistence, registry)
+        - GTA V adapter (natives, UI)
+        - Docs / community
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: This works in Story Mode only and does not require anything in GTA Online.
+          required: true
+        - label: This needs no ripped assets, pre-release material, or real-money mechanics.
+          required: true
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I would like to open a PR for this.
+        - label: I can help test it in-game.

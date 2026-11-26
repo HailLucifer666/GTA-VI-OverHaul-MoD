@@ -36,10 +36,13 @@
     <Compile Include="EmergencyServiceType.cs" />
     <Compile Include="EntityOwnership.cs" />
     <Compile Include="GameKey.cs" />
+    <Compile Include="ICompanionAdapter.cs" />
     <Compile Include="IEconomyService.cs" />
     <Compile Include="IEntityCleanupAdapter.cs" />
     <Compile Include="IEntityRegistry.cs" />
     <Compile Include="IEmergencyDispatchAdapter.cs" />
+    <Compile Include="IEmergencySideJobAdapter.cs" />
+    <Compile Include="IFirstPersonCameraAdapter.cs" />
     <Compile Include="IGameContext.cs" />
     <Compile Include="IModModule.cs" />
     <Compile Include="INotificationService.cs" />

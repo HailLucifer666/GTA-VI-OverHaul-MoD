@@ -37,6 +37,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activities\BlackjackEngine.cs" />
+    <Compile Include="Activities\CompanionHangoutController.cs" />
+    <Compile Include="Activities\EmergencySideJobController.cs" />
+    <Compile Include="Activities\FirstPersonCameraController.cs" />
     <Compile Include="Activities\RampageController.cs" />
     <Compile Include="Activities\RpgSkillEngine.cs" />
     <Compile Include="Activities\TaxiMissionController.cs" />

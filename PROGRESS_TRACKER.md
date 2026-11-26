@@ -29,16 +29,17 @@
 | **Phase 3** | **Module 2 (`EmergencyDispatchController`)** — Cut Feature `#25` (911 Police, Ambulance heal-on-arrival, Fire Truck) + arrival/timeout/cleanup FSM | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 34/34 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe G (remote heal before arrival) → `26_Dispatch_Ambulance_DoesNotHealBeforePhysicalArrival` & `27` FAIL<br>• Probe H (unconditional drive re-task spam) → `30_Dispatch_DoesNotSpamDriveTaskUnlessPlayerMovesPastThreshold` FAIL<br>• Probe I (skipped cleanup on timeout) → `31_Dispatch_Timeout_CleansUpEntitiesAndBlips` FAIL |
 | **Phase 4** | **Economy, Properties, Businesses, Vehicles & Stocks** — Cut Features `#1, #2, #3, #4, #5` (idempotent transactions, `OfflineCapDays = 7`, stock ticker + contract shocks) | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 46/46 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe J (missing refund on persist failure) → `38_AssetEngine_PersistenceFailure_RefundsCashAndRollsBackOwnership` FAIL<br>• Probe K (`OfflineCapDays` cap bypassed) → `40_AssetEngine_PassiveIncome_CapsAtOfflineCapDaysAndIsIdempotent` FAIL<br>• Probe L (duplicate purchase double-charge) → `36_AssetEngine_DuplicatePurchase_RejectedWithZeroDoubleCharge` FAIL |
 | **Phase 5** | **Side-Hustles, RPG Stats & Card Games** — Cut Features `#8, #10, #15, #17 [SUB], #20` (Taxi 5-state FSM, Rampage timer/medals, RPG XP curves, virtual-cash Blackjack) | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 58/58 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe M (borrowed taxi tracked as Owned) → `48_Taxi_AbortNeverDeletesBorrowedPlayerTaxi_CleansOwnedFareAndBlip` FAIL<br>• Probe N (medal downgrade overwrite) → `50_Rampage_KillThresholdAwardsBronzeSilverGoldAndNeverDowngradesMedal` FAIL<br>• Probe O (soft-Ace downgrade disabled) → `56_Blackjack_SoftAceAdjustmentAndPlayerBust_SettlesCorrectly` FAIL |
-| **Phase 6** | **GTA VI (PC) Adapter & Live Integration** (Gated by 6-Gate Policy after GTA VI PC + verified Script Hook VI launch) | **NEXT (Awaiting GTA VI PC)** | Pending (6-Gate Policy) | Pending |
+| **Phase 5B** | **Emergency Side-Jobs, First-Person Camera & Friend Hangouts** — Cut Features `#9, #18, #24` (12-level Vigilante/Paramedic/Firefighter, `±75°` pitch-clamped FPS camera, Companion AI) | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 70/70 PASS** (`2026-11-26`) | **3/3 RED confirmed (`2026-11-26`):**<br>• Probe P (borrowed emergency vehicle tracked Owned) → `60_EmergencyJobs_ExitingVehicleAbortsWithoutDeletingBorrowedVehicle` FAIL<br>• Probe Q (FPS pitch clamp removed) → `63_FirstPerson_ToggleClampsPitchToPlusMinus75AndSyncsHeadingOnFoot` FAIL<br>• Probe R (dismissed companion deleted instead of released) → `67_Companion_CallFollowCombatAssistAndNaturalDismiss` FAIL |
+| **Phase 5C** | **Guard Dogs (`#26`), Home Furnishing Store (`#7`) & ClassicNet Web Hub (`#6`)** — remaining offline-buildable pure-C# modules | **NEXT** | Pending | Pending |
+| **Phase 6** | **GTA VI (PC) Adapter & Live Integration** (Gated by 6-Gate Policy after GTA VI PC + verified Script Hook VI launch) | **Awaiting Game / Adapter** | Pending (6-Gate Policy) | Pending |
 
 ---
 
 ## 3. Exact Resume Command for Next Session
 
-**All offline-buildable Core & Infrastructure phases (Phases 0–5) are 100% COMPLETE (58/58 tests PASS, 15/15 sabotage probes confirmed RED → restored GREEN).**
+**Phases 0–5B are COMPLETE (70/70 tests PASS, 18/18 sabotage probes A–R confirmed RED → restored GREEN; 14 of 26 cut features implemented in pure C#).**
 
-To start **Phase 6** once **GTA VI (PC)** + a verified, legal public Script Hook VI launch (all 6 Migration Gates passed):
-1. Run `.\build.ps1` and confirm Phases 1–5 are still **58/58 PASS**.
-2. Create `src\ClassicGTA.Adapter.GTAVI\` implementing the verified `ClassicGTA.Contracts` interfaces (`IGameContext`, `IWeaponService`, `IEntityCleanupAdapter`, `IEmergencyDispatchAdapter`, `IEconomyService`, `ITaxiAdapter`, `INotificationService`).
-3. Populate externalized Leonida coordinate & asset tables (`ContentId`-keyed JSON/INI) without modifying `ClassicGTA.Core`.
-4. Run the in-game Measurement Protocol (`[RESTORE]` logs, 30 consecutive hot-reloads, 30-minute soak test, entity/blip baseline return check) and time-box Tier 3 physics/animation spikes (Prone `#21`, Dual-Wield `#22`, Skateboarding `#16`, Guard Dogs `#26`) to 3 sessions max each.
+To start **Phase 5C** (remaining offline-buildable modules while game downloads) in any new session or CLI:
+1. Run `.\build.ps1` and confirm Phases 1–5B are still **70/70 PASS**.
+2. Build `PetCompanionController` (`#26` Guard Dogs), `SafehouseDecoratorEngine` (`#7` Home Furnishing transform store), and `ClassicNetHub` (`#6` unified menu view-model).
+3. Add Phase 5C tests + 3 sabotage probes, restore GREEN, update tracker, and push to `origin/main`.

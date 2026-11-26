@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/media/banner.svg" alt="Classic GTA Overhaul — cinematic GTA VI-style sunset with a neon VI, palms and a city skyline" width="100%">
+  <img src="docs/media/banner.svg?v=2" alt="Classic GTA Overhaul — cinematic GTA VI-style sunset with a neon VI, palms and a city skyline" width="100%">
 
   <h1>Classic GTA Overhaul</h1>
 

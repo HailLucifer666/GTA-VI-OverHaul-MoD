@@ -48,16 +48,30 @@
       <stop offset="1" stop-color="#160927" stop-opacity="0"/>
     </radialGradient>
 
+    <radialGradient id="cloudPink" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FF8FB4" stop-opacity="0.24"/>
+      <stop offset="0.55" stop-color="#FF8FB4" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#FF8FB4" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="cloudGold" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFC98A" stop-opacity="0.26"/>
+      <stop offset="0.55" stop-color="#FFC98A" stop-opacity="0.11"/>
+      <stop offset="1" stop-color="#FFC98A" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="waterGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFC98A" stop-opacity="0.38"/>
+      <stop offset="0.5" stop-color="#FF9A6A" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FF9A6A" stop-opacity="0"/>
+    </radialGradient>
+
     <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
       <feGaussianBlur stdDeviation="4" result="b"/>
       <feMerge>
         <feMergeNode in="b"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    </filter>
-
-    <filter id="broad" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="14"/>
     </filter>
 
     <filter id="textshadow" x="-20%" y="-40%" width="140%" height="200%">
@@ -76,7 +90,7 @@
       .push { animation: push 26s ease-in-out infinite; transform-box: view-box; transform-origin: 640px 170px; }
       @keyframes push { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 
-      .sun { animation: bloom 6.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+      .sun { opacity: 0.95; animation: bloom 6.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
       @keyframes bloom { 0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 1; transform: scale(1.03); } }
 
       .cloud-a { animation: drift 48s ease-in-out infinite alternate; }
@@ -87,7 +101,7 @@
       .palm-r { animation-duration: 11s; }
       @keyframes sway { from { transform: rotate(-1.1deg); } to { transform: rotate(1.1deg); } }
 
-      .vi { animation: neon 7.5s ease-in-out infinite; }
+      .vi { opacity: 0.46; animation: neon 7.5s ease-in-out infinite; }
       @keyframes neon {
         0%, 88%, 100% { opacity: 0.46; }
         45% { opacity: 0.56; }
@@ -96,10 +110,10 @@
         95% { opacity: 0.30; }
       }
 
-      .shimmer { animation: shimmer 3.4s ease-in-out infinite; }
+      .shimmer { opacity: 0.2; animation: shimmer 3.4s ease-in-out infinite; }
       @keyframes shimmer { 0%, 100% { opacity: 0.14; } 50% { opacity: 0.5; } }
 
-      .mote { animation: mote 14s ease-in-out infinite; }
+      .mote { opacity: 0; animation: mote 14s ease-in-out infinite; }
       @keyframes mote {
         0% { transform: translateY(0); opacity: 0; }
         20% { opacity: 0.55; }
@@ -134,14 +148,14 @@
   <g class="push">
     <rect x="0" y="0" width="1280" height="240" fill="url(#sky)"/>
 
-    <!-- clouds -->
-    <g class="cloud-a" fill="#FF8FB4" opacity="0.18" filter="url(#broad)">
-      <ellipse cx="250" cy="72" rx="250" ry="16"/>
-      <ellipse cx="430" cy="98" rx="180" ry="11"/>
+    <!-- clouds: soft gradients, no blur filter -->
+    <g class="cloud-a">
+      <ellipse cx="250" cy="72" rx="280" ry="26" fill="url(#cloudPink)"/>
+      <ellipse cx="430" cy="98" rx="200" ry="18" fill="url(#cloudPink)"/>
     </g>
-    <g class="cloud-b" fill="#FFB27A" opacity="0.20" filter="url(#broad)">
-      <ellipse cx="1000" cy="62" rx="270" ry="15"/>
-      <ellipse cx="830" cy="90" rx="190" ry="10"/>
+    <g class="cloud-b">
+      <ellipse cx="1000" cy="62" rx="300" ry="24" fill="url(#cloudGold)"/>
+      <ellipse cx="830" cy="90" rx="210" ry="16" fill="url(#cloudGold)"/>
     </g>
 
     <!-- sun, lifted above the skyline -->
@@ -198,7 +212,7 @@
 
     <!-- water -->
     <rect x="0" y="240" width="1280" height="100" fill="url(#water)"/>
-    <ellipse cx="640" cy="292" rx="130" ry="54" fill="#FFB27A" opacity="0.32" filter="url(#broad)"/>
+    <ellipse cx="640" cy="292" rx="170" ry="70" fill="url(#waterGlow)"/>
     <g stroke="#FFE0B8" stroke-width="2" stroke-linecap="round">
       <line class="shimmer" x1="452" y1="262" x2="828" y2="262" style="animation-delay:0s"/>
       <line class="shimmer" x1="506" y1="280" x2="774" y2="280" style="animation-delay:0.5s"/>
@@ -221,7 +235,7 @@
 
   <text x="640" y="150" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="58" font-weight="800" letter-spacing="2" fill="#FFF6EA" filter="url(#glow)">CLASSIC GTA OVERHAUL</text>
 
-  <text x="640" y="190" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="16" letter-spacing="5" fill="#FFE0B8">THE CLASSIC SANDBOX, REBUILT IN THE OPEN</text>
+  <text x="640" y="190" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" letter-spacing="4" fill="#FFE0B8">THE CLASSIC SANDBOX, REBUILT IN THE OPEN</text>
 
   <!-- dust motes -->
   <g fill="#FFE7C2">

@@ -55,11 +55,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassicGTAHostScript.cs" />
+    <Compile Include="GtaVCompanionAdapter.cs" />
     <Compile Include="GtaVEconomyService.cs" />
     <Compile Include="GtaVEmergencyDispatchAdapter.cs" />
+    <Compile Include="GtaVEmergencySideJobAdapter.cs" />
     <Compile Include="GtaVEntityCleanupAdapter.cs" />
     <Compile Include="GtaVGameContext.cs" />
     <Compile Include="GtaVNotificationService.cs" />
+    <Compile Include="GtaVPetAdapter.cs" />
+    <Compile Include="GtaVTaxiAdapter.cs" />
     <Compile Include="GtaVWeaponService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

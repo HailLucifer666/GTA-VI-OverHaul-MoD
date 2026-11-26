@@ -77,6 +77,9 @@ namespace ClassicGTA.Core.Activities
 
             if (!_registry.TryTrackEntity(pedHandle, ModuleId, EntityOwnership.Owned))
             {
+                // V-03 Fix: Delete untracked ped and blip immediately on budget refusal.
+                _registry.DeleteUntrackedEntity(pedHandle);
+                _registry.DeleteUntrackedBlip(blipHandle);
                 _registry.CleanupOwner(ModuleId, false);
                 return false;
             }
@@ -124,8 +127,8 @@ namespace ClassicGTA.Core.Activities
             if (!_isRunning || !_isEnabled || _state == HangoutState.Idle) return;
             if (_context.IsOnlineSession)
             {
-                // S-06 Fix: Drop handles without calling DeleteEntity across SP->Online transition.
-                _registry.DropAllWithoutDeleting();
+                // V-04 Fix: Drop only this owner's handles without calling DeleteEntity.
+                _registry.DropOwnerWithoutDeleting(ModuleId);
                 _companionPedHandle = 0;
                 _activeCompanionId = null;
                 _state = HangoutState.Idle;

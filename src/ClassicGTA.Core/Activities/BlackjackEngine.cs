@@ -111,7 +111,12 @@ namespace ClassicGTA.Core.Activities
 
         public BlackjackOutcome Hit()
         {
-            if (!_roundActive || _context.IsOnlineSession) return _outcome;
+            if (!_roundActive) return _outcome;
+            if (_context.IsOnlineSession)
+            {
+                // V-18 Fix: Void round cleanly on SP->Online transition instead of freezing _roundActive forever.
+                return VoidForOnline();
+            }
 
             _playerHand.Add(DrawRank());
             if (PlayerTotal > 21)
@@ -123,7 +128,11 @@ namespace ClassicGTA.Core.Activities
 
         public BlackjackOutcome DoubleDown()
         {
-            if (!_roundActive || _context.IsOnlineSession || _playerHand.Count != 2) return _outcome;
+            if (!_roundActive || _playerHand.Count != 2) return _outcome;
+            if (_context.IsOnlineSession)
+            {
+                return VoidForOnline();
+            }
             if (_economy.GetCash() < _currentBet || !_economy.TrySpend(_currentBet, "BlackjackDouble"))
             {
                 return _outcome;
@@ -142,7 +151,11 @@ namespace ClassicGTA.Core.Activities
 
         public BlackjackOutcome Stand()
         {
-            if (!_roundActive || _context.IsOnlineSession) return _outcome;
+            if (!_roundActive) return _outcome;
+            if (_context.IsOnlineSession)
+            {
+                return VoidForOnline();
+            }
 
             while (DealerTotal < 17)
             {
@@ -215,11 +228,19 @@ namespace ClassicGTA.Core.Activities
             return rank;
         }
 
+        private BlackjackOutcome VoidForOnline()
+        {
+            _outcome = BlackjackOutcome.Push;
+            _roundActive = false;
+            _currentBet = 0;
+            return _outcome;
+        }
+
         private void Settle(BlackjackOutcome outcome, int payout)
         {
             _outcome = outcome;
             _roundActive = false;
-            if (payout > 0 && !_context.IsOnlineSession)
+            if (payout > 0)
             {
                 _economy.Credit(payout, "Blackjack:" + outcome);
             }

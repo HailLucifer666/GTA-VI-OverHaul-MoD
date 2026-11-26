@@ -39,6 +39,7 @@ namespace ClassicGTA.Tests
         public int EnableCombatControlsCalls { get; private set; }
         public int DisableFiringFalseCalls { get; private set; }
         public int CanEquipAllCalls { get; private set; }
+        public int CanEquipAllFalseCalls { get; private set; }
         public int SelectWeaponCalls { get; private set; }
         public int GiveWeaponCalls { get; private set; }
 
@@ -70,6 +71,7 @@ namespace ClassicGTA.Tests
         public void SetCanEquipAllWeapons(bool allow)
         {
             if (allow) CanEquipAllCalls++;
+            else CanEquipAllFalseCalls++;
         }
 
         public IEnumerable<uint> GetAllValidWeaponIds() { return CatalogWeapons; }

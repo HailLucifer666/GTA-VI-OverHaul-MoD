@@ -105,7 +105,17 @@ namespace ClassicGTA.Core.Activities
         public void SlowTick(int gameTimeMs)
         {
             if (!_isRunning || !_isEnabled || !_jobActive) return;
-            if (_context.IsOnlineSession || !_context.IsPlayerReady || _context.IsPaused || _context.IsInCutscene) return;
+            if (_context.IsOnlineSession)
+            {
+                // V-04 Fix: Drop side-job handles without deleting and reset state on SP->Online transition.
+                _registry.DropOwnerWithoutDeleting(ModuleId);
+                _jobActive = false;
+                _vehicleHandle = 0;
+                _targetHandle = 0;
+                _currentLevel = 0;
+                return;
+            }
+            if (!_context.IsPlayerReady || _context.IsPaused || _context.IsInCutscene) return;
 
             EmergencyServiceType currentType;
             int currentVeh;

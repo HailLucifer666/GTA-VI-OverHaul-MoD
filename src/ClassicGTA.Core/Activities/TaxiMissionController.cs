@@ -109,8 +109,8 @@ namespace ClassicGTA.Core.Activities
             if (!_isRunning || !_isEnabled || _state == TaxiState.Idle) return;
             if (_context.IsOnlineSession)
             {
-                // S-06/S-07 Fix: On SP->Online transition, drop stale handles without deleting recycled Online entities.
-                _registry.DropAllWithoutDeleting();
+                // V-04 Fix: Drop only this owner's handles without deleting recycled Online entities.
+                _registry.DropOwnerWithoutDeleting(ModuleId);
                 _taxiVehicleHandle = 0; _farePedHandle = 0; _blipHandle = 0;
                 _state = TaxiState.Idle;
                 return;
@@ -263,7 +263,13 @@ namespace ClassicGTA.Core.Activities
         private void CompleteAndReset()
         {
             // Release owned fare ped & delete blip; Borrowed taxi remains untouched.
+            int savedTaxiHandle = _taxiVehicleHandle;
             _registry.CleanupOwner(ModuleId, true);
+            // V-12 Fix: Re-register borrowed player taxi so protection never lapses on subsequent fares.
+            if (savedTaxiHandle > 0)
+            {
+                _registry.TryTrackEntity(savedTaxiHandle, ModuleId, EntityOwnership.Borrowed);
+            }
             _farePedHandle = 0;
             _blipHandle = 0;
             _state = TaxiState.Idle;

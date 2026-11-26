@@ -37,11 +37,20 @@ namespace ClassicGTA.Tests
             tests.AddRange(Phase5CTests.GetAll());
             tests.AddRange(HardenRegressionTests.GetAll());
 
-            // T-10 Fix: Enforce minimum test count so silently dropped tests fail the gate.
-            const int expectedMinTests = 94;
-            if (tests.Count < expectedMinTests)
+            // V-21 Fix: Reject duplicate test names and enforce minimum unique test count.
+            const int expectedMinTests = 98;
+            var seenNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var entry in tests)
             {
-                Console.WriteLine("[FAIL] Test-count guard tripped: expected at least " + expectedMinTests + ", found " + tests.Count);
+                if (!seenNames.Add(entry.Key))
+                {
+                    Console.WriteLine("[FAIL] Duplicate test name detected: " + entry.Key);
+                    return 1;
+                }
+            }
+            if (seenNames.Count < expectedMinTests)
+            {
+                Console.WriteLine("[FAIL] Test-count guard tripped: expected at least " + expectedMinTests + " unique tests, found " + seenNames.Count);
                 return 1;
             }
 

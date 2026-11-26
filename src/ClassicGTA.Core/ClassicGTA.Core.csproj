@@ -37,13 +37,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activities\BlackjackEngine.cs" />
+    <Compile Include="Activities\ClassicNetHub.cs" />
     <Compile Include="Activities\CompanionHangoutController.cs" />
     <Compile Include="Activities\EmergencySideJobController.cs" />
     <Compile Include="Activities\FirstPersonCameraController.cs" />
+    <Compile Include="Activities\PetCompanionController.cs" />
     <Compile Include="Activities\RampageController.cs" />
     <Compile Include="Activities\RpgSkillEngine.cs" />
     <Compile Include="Activities\TaxiMissionController.cs" />
     <Compile Include="Economy\AssetOwnershipEngine.cs" />
+    <Compile Include="Economy\SafehouseDecoratorEngine.cs" />
     <Compile Include="Economy\StockMarketEngine.cs" />
     <Compile Include="Module1\WeaponAndZoneConfig.cs" />
     <Compile Include="Module1\WeaponAndZoneController.cs" />

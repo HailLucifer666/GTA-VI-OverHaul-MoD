@@ -34,6 +34,7 @@ namespace ClassicGTA.Tests
             tests.AddRange(EconomyTests.GetAll());
             tests.AddRange(ActivitiesTests.GetAll());
             tests.AddRange(Phase5BTests.GetAll());
+            tests.AddRange(Phase5CTests.GetAll());
 
             int passed = 0;
             int failed = 0;

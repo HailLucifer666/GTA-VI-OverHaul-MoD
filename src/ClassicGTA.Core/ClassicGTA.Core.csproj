@@ -36,6 +36,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Economy\AssetOwnershipEngine.cs" />
+    <Compile Include="Economy\StockMarketEngine.cs" />
     <Compile Include="Module1\WeaponAndZoneConfig.cs" />
     <Compile Include="Module1\WeaponAndZoneController.cs" />
     <Compile Include="Module2\EmergencyDispatchConfig.cs" />

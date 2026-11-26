@@ -30,10 +30,13 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssetCategory.cs" />
+    <Compile Include="AssetDefinition.cs" />
     <Compile Include="DispatchSpawnResult.cs" />
     <Compile Include="EmergencyServiceType.cs" />
     <Compile Include="EntityOwnership.cs" />
     <Compile Include="GameKey.cs" />
+    <Compile Include="IEconomyService.cs" />
     <Compile Include="IEntityCleanupAdapter.cs" />
     <Compile Include="IEntityRegistry.cs" />
     <Compile Include="IEmergencyDispatchAdapter.cs" />
@@ -42,6 +45,7 @@
     <Compile Include="INotificationService.cs" />
     <Compile Include="IPersistenceStore.cs" />
     <Compile Include="IWeaponService.cs" />
+    <Compile Include="PurchaseResult.cs" />
     <Compile Include="WorldPoint.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

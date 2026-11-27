@@ -4,7 +4,7 @@
 
 **Repository:** `https://github.com/HailLucifer666/classic-gta-overhaul-mod` (private)
 **Workspace Root:** `E:\Classic GTA overhaul mod for PC`
-**Last Updated:** `2026-11-27`
+**Last Updated:** `2026-11-28`
 **Dev Team Installed Locally:** `.zcode/`, `.claude/`, `AGENTS.md`, `TEAM-USAGE.md` (from `E:\WIFI Hack\Claude-Code-Dev-Studios`)
 
 ---
@@ -34,16 +34,17 @@
 | **Phase 6A** | **`ClassicGTA.Adapter.GTAV` (GTA V Legacy Prototype — Compile-Only)** — Compiled against `ScriptHookVDotNet3 3.6.0` + `LemonUI.SHVDN3 2.2.0` (`E:\.packages\`, `Private=False`); wires 6 `F7` submenus (Weapons/Zone, 911 Dispatch, Taxi, Emergency Jobs, Properties/Businesses/Kraken Summon/Stocks, Blackjack, Friends/Guard Dogs) | **DONE (Compile-Only)** | `.\build.ps1` → **0 Errors, 0 Warnings** (`2026-11-26`); not yet live-tested in-game | Zero `ScriptHookVDotNet3.dll` leakage into `bin\Release\` |
 | **Phase 6A-Harden (Pass 1 & 2)** | **Hardening Passes (`v0.6.1` + `v0.6.2`)** — Closed `R-1`, `H-01`, `C-2`, `C-4`, `C-6`, `C-7`, `C-9`, `C-10`, `H-02` (5/5 sites), `H-03`, `R-4/V-11`, `R-5`, `R-14/V-19`, `S-06/V-04/V-13`, `S-08`, `S-10/V-18`, `S-11`, `S-12/V-12`, `V-14`, `V-16`, `V-20/V-21`. | **DONE** | `.\build.ps1` → **0 Errors, 0 Warnings, 98/98 PASS** (`2026-11-27`) | `.\probe.ps1` (6/6 RED → 98/98 GREEN) |
 | **Phase 6A-Harden (Pass 3 / `v0.6.3`)** | **Master Review Closure (`C-01`, `C-02`, `I-01`–`I-09`, `A-01`–`A-04`)** — Per-slot atomic `ModWalletEconomyService` + `AssetOwnershipEngine` + legacy v0.6.0 migration, pure UTC income clock + purchase baseline, interior-gated `WeaponAndZoneController`, strict `PersistenceCodec` + validated backup rotation across all 7 engines, `VoidedOnline` Blackjack refund, `ClassicGTAHostController` adapter seam referenced directly by `ClassicGTA.Tests`, `UiLoopGuard` circuit breaker, `KrakenDeliveryController` water+cap=1, `RoadSpawnValidator` + `FireExtinguishEvaluator`, taxi pickup retry/timeout, stock tick persistence, online log-once guard, SHA-256 package pins. | **DONE (Offline Verified)** | `.\build.ps1` → **0 Errors, 0 Warnings, 116/116 PASS** (`2026-11-27`) | **`.\probe.ps1` (12/12 RED → 116/116 GREEN)** |
-| **Phase 6B** | **Live GTA V Legacy In-Game Deploy & Measurement (`A-07`)** — First live load verified (`GTA5.exe 1.0.3889.0`, `ScriptHookV 3889.0`, `SHVDN v3.7.0-nightly.206`): `F7` hub, Money & Mod Wallet grants, asset purchases (`business.malibu_club`, `sub.kraken`, `safehouse.del_perro`), and atomic `.dat`/`.bak1–3` rotation confirmed in `ClassicGTA.log` (`2026-11-27`). Remaining: 30 hot-reloads, 30-min soak, entity high-water, full feature pass. | **IN PROGRESS (First Load Verified)** | Live `ClassicGTA.log` clean (`2026-11-27`); `116/116` tests PASS | Pending full soak |
+| **Phase 6B** | **Live GTA V Legacy In-Game Deploy & Measurement (`A-07`)** — First live load verified (`GTA5.exe 1.0.3889.0`, `ScriptHookV 3889.0`, `SHVDN v3.7.0-nightly.206`): `F7` hub, Money & Mod Wallet grants, asset purchases (`business.malibu_club`, `sub.kraken`, `safehouse.del_perro`), and atomic `.dat`/`.bak1–3` rotation confirmed in `ClassicGTA.log` (`2026-11-27`). Remaining: 30 hot-reloads, 30-min soak, entity high-water, full feature pass. | **IN PROGRESS (First Load Verified)** | Live `ClassicGTA.log` clean (`2026-11-27`); `136/136` tests PASS | Pending full soak |
+| **Phase 7** | **GTA VI Arcade Restoration Pack (`/kee`)** — 5 engine-agnostic Core modules (`ClassicCarTheftController`, `ClassicWantedController`, `ArcadeFreedomController`, `ClassicCheatEngine`, `TerritoryWarController`) + 5 GTA V adapters + 2 new `F7` submenus (**GTA VI Arcade Restorations** & **Classic Cheats & Turf Wars**) + Gate D derived Online guard | **DONE (Offline Verified)** | `.\build.ps1` → **0 Errors, 0 Warnings, 136/136 PASS** (`2026-11-28`) | **`.\probe.ps1` (17/17 RED → 136/136 GREEN, `2026-11-28`):** `P13`–`P17` added for Car Theft Online, Wanted Bribe Funds, Arcade Freedom Online, Cheat Engine Online, and Turf War Persist Rollback |
 
 ---
 
 ## 3. Exact Resume Command for Next Session
 
-**All offline-verifiable Core, Infrastructure, and Adapter-Seam hardening (Phases 0–6A Pass 3) are COMPLETE: `116/116` unique tests PASS (`0 Errors, 0 Warnings`), `12/12` scripted `/kee` sabotage probes confirmed RED → restored GREEN.**
+**All offline-verifiable Core, Infrastructure, Adapter-Seam hardening, and Phase 7 GTA VI Arcade Restoration Pack modules (Phases 0–7) are COMPLETE: `136/136` unique tests PASS (`0 Errors, 0 Warnings`), `17/17` scripted `/kee` sabotage probes confirmed RED → restored GREEN.**
 
-To start **Phase 6B (Live GTA V Legacy Verification)** once your game download finishes:
-1. Run `.\build.ps1` and confirm **116/116 PASS** (`0 Errors, 0 Warnings`) and SHA-256 package integrity check green.
+To start **Phase 6B + Phase 7 Live GTA V Legacy Verification** in-game:
+1. Run `.\build.ps1` and confirm **136/136 PASS** (`0 Errors, 0 Warnings`) and SHA-256 package integrity check green.
 2. Verify installed `GTA5.exe` Legacy product version and install matching `ScriptHookV` + `ScriptHookVDotNet3` in the GTA V root folder.
 3. Deploy via `msbuild /p:GTA5Dir="<path>"` (copies `ClassicGTA.GTAV.dll`, `ClassicGTA.Contracts.dll`, `ClassicGTA.Core.dll`, `ClassicGTA.Infrastructure.dll`, and `LemonUI.SHVDN3.dll` into `scripts\`; excludes `ScriptHookVDotNet3.dll`).
 4. Run the live in-game Measurement Protocol (`[RESTORE]` telemetry logs, save/load wallet+asset check, Online-transition check, 30 consecutive hot-reloads, 30-minute soak test, zero entity/blip leaks) and record the versioned evidence artifact before applying any runtime known-good tag.

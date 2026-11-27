@@ -8,7 +8,7 @@
 
   <p>
     <img src="docs/media/badges/build.svg" alt="build: passing" height="28">
-    <img src="docs/media/badges/tests.svg" alt="tests: 116/116" height="28">
+    <img src="docs/media/badges/tests.svg" alt="tests: 136/136" height="28">
     <img src="docs/media/badges/status.svg" alt="live in-game: Phase 6B pending" height="28">
     <img src="docs/media/badges/license.svg" alt="license: GPL-3.0" height="28">
   </p>
@@ -46,11 +46,31 @@ Two promises shape every decision:
 | 🃏 | **Blackjack** | Rules-complete 21 with soft aces, doubles and 3:2 naturals — played with story-mode cash, never real money. | ✅ |
 | 🐕 | **Guard Dogs** | Buy a dog, summon it, and command follow, sit or guard. It walks off on its own when dismissed. | ✅ |
 
-**Also wired:** 💵 Story Cash & Mod Wallet menu · 🏠 safehouse ownership · 🏢 passive business income · 🚤 Kraken delivery · 🚑 emergency side-jobs · 🤝 companion hangouts
+**Also wired:** 💵 Story Cash & Mod Wallet menu · 🏠 safehouse ownership · 🏢 passive business income · 🚤 Kraken delivery · 🚑 emergency side-jobs · 🤝 companion hangouts · 🚗 **GTA VI Arcade Restorations** (Instant Car Theft, Classic Wanted LoS Cooldown + Pay 'n' Spray Bribe, No Refuel/Survival/Vignette) · 🎮 **Classic Cheats & Turf Wars** (3-wave district takeovers + passive turf income)
 
 **In the lab** (built and unit-tested, waiting for their adapter): in-game web hub · furniture placement · rampages · mission medals · first-person camera · RPG skills
 
 **Classified** — three systems stay under wraps until the first live session. No spoilers, no promises.
+
+## By the numbers (real, measured)
+
+Every number below comes directly from the repo build, test runner, and live `GTA5.exe 1.0.3889.0` logs — nothing estimated.
+
+| Metric | Measured Value | How it is verified |
+|:--|:--|:--|
+| **Production C# source** | **84 files · 7,732 lines** | `31` Contracts · `23` Core · `4` Infrastructure · `23` GTA V Adapter |
+| **Test suite** | **12 files · 3,557 lines · 136/136 PASS** | `.\build.ps1` (`Release \| x64`, `TreatWarningsAsErrors=true`, `0` warnings) |
+| **Sabotage probes (`/kee`)** | **17/17 RED → restored GREEN** | `.\probe.ps1` mutates real guards, asserts exact `[FAIL]`, restores byte-identical |
+| **Scheduled modules & UI** | **11 `IModModule`s · 8 `F7` submenus** | 3-tier fault-isolated scheduler (`0ms` / `250ms` / `1000ms`), Gate D Online guard |
+| **Engine leakage in Core** | **0 `GTA.*` / `LemonUI.*` refs** | Verified across all `54` files in `ClassicGTA.Contracts` + `ClassicGTA.Core` |
+| **Hardening & red-team passes** | **4 passes (`v0.6.1`–`v0.6.3` + Phase 7)** | Closed `C-01`–`C-02`, `I-01`–`I-09`, `A-01`–`A-04`, and `H7-01`–`H7-04` |
+| **Live GTA V Legacy test** | **1.0.3889.0 verified (`2026-11-27`)** | `F7` hub, Story Cash & Mod Wallet grants, `3` asset purchases, atomic `.dat` + `.bak1–.bak3` |
+
+### What we tried & proved so far
+- **Strict atomic persistence:** Poisoned primary `.dat` + truncated `.bak1` across persisted engines; confirmed automatic recovery from `.bak2` and zero silent overwrite of corrupt ledgers.
+- **Online fail-closed boundary:** Verified every registered scheduler module (`11/11`) executes `0` gameplay adapter calls when `IsOnlineSession == true`, and active Territory Wars abort without deleting entities.
+- **Three-way entity ownership (`20`-entity cap):** Proved player/borrowed vehicles are never deleted on abort, while refused spawns over budget delete the untracked handle cleanly.
+- **Live GTA V Legacy (`1.0.3889.0`):** Confirmed clean load under ScriptHookV `3889.0` + SHVDN `v3.7.0-nightly.206` with `0` errors in `ClassicGTA.log`; full 30-reload & 30-minute soak test is next in Phase 6B.
 
 ## Under the hood
 
@@ -78,8 +98,8 @@ If you own **GTA V Legacy on PC** and can install ScriptHookV, you are the singl
 
 ```powershell
 # Windows · .NET Framework 4.8 · Visual Studio Build Tools
-.\build.ps1     # restores pinned packages, builds 5 projects, runs 116/116 tests
-.\probe.ps1     # 12 sabotage probes: break a guard, watch the right test go red, restore
+.\build.ps1     # restores pinned packages, builds 5 projects, runs 136/136 tests
+.\probe.ps1     # 17 sabotage probes: break a guard, watch the right test go red, restore
 ```
 
 No global installs, no package cache outside the repo. `build.ps1` pulls the two pinned dependencies into `.packages\` on first run and verifies their SHA-256.
@@ -115,7 +135,7 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before you start. Be decent to each ot
 
 | Phase | Goal | State |
 |:--|:--|:--:|
-| **Core** | Engine-agnostic systems, economy, persistence, 116 tests, 12 probes | ✅ Done |
+| **Core** | Engine-agnostic systems, economy, persistence, Phase 7 GTA VI Arcade Pack, 136 tests, 17 probes | ✅ Done |
 | **Phase 6B** | Live GTA V Legacy verification: reloads, soak, frame time, leaks | 🔄 In Progress (first load ✅) |
 | **GTA VI** | Swap the adapter when a public PC scripting interface ships | ⏳ Waiting on the game |
 

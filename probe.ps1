@@ -40,7 +40,7 @@ function Invoke-Probe($name, $relPath, $find, $replace, $expectedFailPrefix) {
 }
 
 Write-Host ""
-Write-Host "=== Step 2: Running 12 Scripted /kee Sabotage Probes ===" -ForegroundColor Cyan
+Write-Host "=== Step 2: Running 17 Scripted /kee Sabotage Probes ===" -ForegroundColor Cyan
 
 try {
     Invoke-Probe "P01_OnlineSafetyGuard" `
@@ -114,6 +114,36 @@ try {
         "if (!_adapter.IsSuitableWaterLocation())" `
         "if (false && !_adapter.IsSuitableWaterLocation())" `
         "108_Kraken_RejectsDryLandCapsAtOneEnforcesBudgetAndCleansUpOnAbortAndOnline"
+
+    Invoke-Probe "P13_CarTheftOnlineGuard" `
+        "src\ClassicGTA.Core\Arcade\ClassicCarTheftController.cs" `
+        "if (_context.IsOnlineSession) return false;" `
+        "// PROBE: disabled CarTheft Online guard" `
+        "118_CarTheft_InOnlineSession_PerformsZeroAdapterCalls"
+
+    Invoke-Probe "P14_WantedBribeInsufficientFundsGuard" `
+        "src\ClassicGTA.Core\Arcade\ClassicWantedController.cs" `
+        "if (_bribeCost > 0 && (_economy.GetCash() < _bribeCost || !_economy.TrySpend(_bribeCost, ""PayNSprayBribe"")))" `
+        "if (false && _bribeCost > 0 && (_economy.GetCash() < _bribeCost || !_economy.TrySpend(_bribeCost, ""PayNSprayBribe"")))" `
+        "123_Wanted_PayNSprayBribe_InsufficientFundsRejectedStarsUnchanged"
+
+    Invoke-Probe "P15_ArcadeFreedomOnlineGuard" `
+        "src\ClassicGTA.Core\Arcade\ArcadeFreedomController.cs" `
+        "if (_context.IsOnlineSession) return;" `
+        "// PROBE: disabled ArcadeFreedom Online guard" `
+        "126_ArcadeFreedom_InOnlineSession_PerformsZeroAdapterCalls"
+
+    Invoke-Probe "P16_CheatEngineOnlineGuard" `
+        "src\ClassicGTA.Core\Arcade\ClassicCheatEngine.cs" `
+        "if (_context.IsOnlineSession) return true;" `
+        "// PROBE: disabled CheatEngine Online guard" `
+        "129_Cheats_InOnlineSession_HardBlocksEveryCheatActionAndTick"
+
+    Invoke-Probe "P17_TurfWarPersistRollbackGuard" `
+        "src\ClassicGTA.Core\Arcade\TerritoryWarController.cs" `
+        "_capturedZones.Remove(capturedZone);" `
+        "// PROBE: skipped turf rollback on persist failure" `
+        "134_TurfWar_OnlineTransitionAbortsWithoutDeleting_AndPersistFailureRollsBack"
 }
 finally {
     Write-Host ""

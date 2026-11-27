@@ -57,6 +57,8 @@
     <Compile Include="ClassicGTAHostController.cs" />
     <Compile Include="ClassicGTAHostScript.cs" />
     <Compile Include="FireExtinguishEvaluator.cs" />
+    <Compile Include="GtaVArcadeFreedomAdapter.cs" />
+    <Compile Include="GtaVCarTheftAdapter.cs" />
     <Compile Include="GtaVCompanionAdapter.cs" />
     <Compile Include="GtaVEconomyService.cs" />
     <Compile Include="GtaVEmergencyDispatchAdapter.cs" />
@@ -65,8 +67,11 @@
     <Compile Include="GtaVGameContext.cs" />
     <Compile Include="GtaVNotificationService.cs" />
     <Compile Include="GtaVPetAdapter.cs" />
+    <Compile Include="GtaVSandboxCheatAdapter.cs" />
     <Compile Include="GtaVSubmersibleAdapter.cs" />
     <Compile Include="GtaVTaxiAdapter.cs" />
+    <Compile Include="GtaVTerritoryWarAdapter.cs" />
+    <Compile Include="GtaVWantedSystemAdapter.cs" />
     <Compile Include="GtaVWeaponService.cs" />
     <Compile Include="KrakenDeliveryController.cs" />
     <Compile Include="PassiveIncomeClock.cs" />

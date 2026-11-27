@@ -45,6 +45,11 @@
     <Compile Include="Activities\RampageController.cs" />
     <Compile Include="Activities\RpgSkillEngine.cs" />
     <Compile Include="Activities\TaxiMissionController.cs" />
+    <Compile Include="Arcade\ArcadeFreedomController.cs" />
+    <Compile Include="Arcade\ClassicCarTheftController.cs" />
+    <Compile Include="Arcade\ClassicCheatEngine.cs" />
+    <Compile Include="Arcade\ClassicWantedController.cs" />
+    <Compile Include="Arcade\TerritoryWarController.cs" />
     <Compile Include="Economy\AssetOwnershipEngine.cs" />
     <Compile Include="Economy\ModWalletEconomyService.cs" />
     <Compile Include="Economy\SafehouseDecoratorEngine.cs" />

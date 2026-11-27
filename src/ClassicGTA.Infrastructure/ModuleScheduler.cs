@@ -33,6 +33,16 @@ namespace ClassicGTA.Infrastructure
 
         public int HeartbeatCount { get { return _heartbeatCount; } }
 
+        public IList<IModModule> GetRegisteredModules()
+        {
+            var result = new List<IModModule>(_slots.Count);
+            for (int i = 0; i < _slots.Count; i++)
+            {
+                result.Add(_slots[i].Module);
+            }
+            return result;
+        }
+
         public ModuleScheduler(
             INotificationService logger,
             int slowIntervalMs = 250,

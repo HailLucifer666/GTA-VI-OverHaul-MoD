@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="28" viewBox="0 0 240 28" role="img" aria-label="tests: 116 of 116 passing">
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="28" viewBox="0 0 240 28" role="img" aria-label="tests: 136 of 136 passing">
   <rect x="0.5" y="0.5" width="239" height="27" rx="6" fill="#120A1E" stroke="#2A1B40"/>
   <line x1="100" y1="4" x2="100" y2="24" stroke="#2A1B40"/>
   <text x="50" y="18" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="11" fill="#B9AECB">tests</text>
-  <text x="170" y="18" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="11" font-weight="700" fill="#FF3FA4">116/116</text>
+  <text x="170" y="18" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="11" font-weight="700" fill="#FF3FA4">136/136</text>
 </svg>

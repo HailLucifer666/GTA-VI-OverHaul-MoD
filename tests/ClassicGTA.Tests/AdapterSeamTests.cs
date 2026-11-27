@@ -684,11 +684,14 @@ namespace ClassicGTA.Tests
 
             string readme = File.ReadAllText(Path.Combine(repoRoot, "README.md"), Encoding.UTF8);
             string tracker = File.ReadAllText(Path.Combine(repoRoot, "PROGRESS_TRACKER.md"), Encoding.UTF8);
+            string badge = File.ReadAllText(Path.Combine(repoRoot, "docs", "media", "badges", "tests.svg"), Encoding.UTF8);
 
-            Assert(readme.Contains("116/116") && !readme.Contains("94 tests") && !readme.Contains("98/98"),
-                "README.md must report current 116/116 test count with no stale 94/98 counts.");
-            Assert(tracker.Contains("116/116") && !tracker.Contains("still **82/82 PASS**"),
-                "PROGRESS_TRACKER.md must report current 116/116 test count with no stale 82/82 resume text.");
+            Assert(readme.Contains("136/136") && !readme.Contains("94 tests") && !readme.Contains("98/98"),
+                "README.md must report current 136/136 test count with no stale 94/98 counts.");
+            Assert(tracker.Contains("136/136") && !tracker.Contains("still **82/82 PASS**"),
+                "PROGRESS_TRACKER.md must report current 136/136 test count with no stale 82/82 resume text.");
+            Assert(badge.Contains("136/136"),
+                "docs/media/badges/tests.svg must report current 136/136 test count.");
         }
 
         private static string FindRepoRoot()

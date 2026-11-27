@@ -1,6 +1,7 @@
 using System;
 using ClassicGTA.Contracts;
 using ClassicGTA.Core.Activities;
+using ClassicGTA.Core.Arcade;
 using ClassicGTA.Core.Economy;
 using ClassicGTA.Core.Module1;
 using ClassicGTA.Core.Module2;
@@ -52,6 +53,12 @@ namespace ClassicGTA.Adapter.GTAV
         public CompanionHangoutController CompanionModule { get; private set; }
         public PetCompanionController PetModule { get; private set; }
 
+        public ClassicCarTheftController CarTheftModule { get; private set; }
+        public ClassicWantedController WantedModule { get; private set; }
+        public ArcadeFreedomController ArcadeFreedomModule { get; private set; }
+        public ClassicCheatEngine CheatEngine { get; private set; }
+        public TerritoryWarController TerritoryWarModule { get; private set; }
+
         public AssetOwnershipEngine AssetsEngine { get; private set; }
         public StockMarketEngine StockEngine { get; private set; }
         public BlackjackEngine BlackjackEngine { get; private set; }
@@ -73,7 +80,12 @@ namespace ClassicGTA.Adapter.GTAV
             Func<DateTime> utcNowProvider = null,
             string slotId = DefaultSlotId,
             int initialWalletBalance = ModWalletEconomyService.DefaultInitialBalance,
-            IEconomyService storyCashEconomy = null)
+            IEconomyService storyCashEconomy = null,
+            ICarTheftAdapter carTheftAdapter = null,
+            IWantedSystemAdapter wantedAdapter = null,
+            IArcadeFreedomAdapter arcadeFreedomAdapter = null,
+            ISandboxCheatAdapter cheatAdapter = null,
+            ITerritoryWarAdapter territoryWarAdapter = null)
         {
             if (context == null) throw new ArgumentNullException("context");
             if (weaponService == null) throw new ArgumentNullException("weaponService");
@@ -117,10 +129,17 @@ namespace ClassicGTA.Adapter.GTAV
             BlackjackEngine = new BlackjackEngine(context, Wallet);
             KrakenController = new KrakenDeliveryController(context, AssetsEngine, submersibleAdapter, Registry, notifications);
 
+            CarTheftModule = new ClassicCarTheftController(context, carTheftAdapter ?? new NoOpCarTheftAdapter(), notifications);
+            WantedModule = new ClassicWantedController(context, wantedAdapter ?? new NoOpWantedSystemAdapter(), Wallet, notifications);
+            ArcadeFreedomModule = new ArcadeFreedomController(context, arcadeFreedomAdapter ?? new NoOpArcadeFreedomAdapter(), notifications);
+            CheatEngine = new ClassicCheatEngine(context, cheatAdapter ?? new NoOpSandboxCheatAdapter(), Registry, notifications);
+            TerritoryWarModule = new TerritoryWarController(context, territoryWarAdapter ?? new NoOpTerritoryWarAdapter(), Wallet, Registry, store, notifications, SlotId, 7, () => CurrentUtcDay);
+
             SafeLoad(() => Wallet.LoadState(), "Wallet");
             SafeLoad(() => PetModule.LoadState(), "Pets");
             SafeLoad(() => AssetsEngine.LoadState(), "Assets");
             SafeLoad(() => StockEngine.LoadState(), "Stocks");
+            SafeLoad(() => TerritoryWarModule.LoadState(), "Turf");
 
             Scheduler.Register(WeaponsModule);
             Scheduler.Register(DispatchModule);
@@ -128,6 +147,11 @@ namespace ClassicGTA.Adapter.GTAV
             Scheduler.Register(SideJobModule);
             Scheduler.Register(CompanionModule);
             Scheduler.Register(PetModule);
+            Scheduler.Register(CarTheftModule);
+            Scheduler.Register(WantedModule);
+            Scheduler.Register(ArcadeFreedomModule);
+            Scheduler.Register(CheatEngine);
+            Scheduler.Register(TerritoryWarModule);
             Scheduler.StartAll();
         }
 
@@ -255,6 +279,50 @@ namespace ClassicGTA.Adapter.GTAV
             pets.RegisterBreed("dog.rottweiler", 1500);
             pets.RegisterBreed("dog.shepherd", 1800);
             pets.RegisterBreed("dog.husky", 2000);
+        }
+
+        private sealed class NoOpCarTheftAdapter : ICarTheftAdapter
+        {
+            public int GetTargetVehicleHandle() { return 0; }
+            public bool IsVehicleLocked(int vehicleHandle) { return false; }
+            public bool UnlockVehicle(int vehicleHandle) { return false; }
+            public void DisableAlarm(int vehicleHandle) { }
+            public void PacifyDriver(int vehicleHandle) { }
+        }
+
+        private sealed class NoOpWantedSystemAdapter : IWantedSystemAdapter
+        {
+            public int GetWantedLevel() { return 0; }
+            public void SetWantedLevel(int level) { }
+            public bool ArePoliceSpottingPlayer() { return false; }
+            public void ClearCriminalProfileHeat() { }
+            public void SetMaxWantedLevel(int maxLevel) { }
+        }
+
+        private sealed class NoOpArcadeFreedomAdapter : IArcadeFreedomAdapter
+        {
+            public void TopUpVehicleFuelAndHealth() { }
+            public void RestorePlayerStaminaAndVitals() { }
+            public void SetVignetteSuppressed(bool suppressed) { }
+        }
+
+        private sealed class NoOpSandboxCheatAdapter : ISandboxCheatAdapter
+        {
+            public void RefillHealthAndArmor() { }
+            public void ClearWantedLevel() { }
+            public void SetNeverWanted(bool enabled) { }
+            public void ApplySuperJumpFrame() { }
+            public bool RepairCurrentVehicle() { return false; }
+            public int SpawnClassicVehicle(string modelId) { return 0; }
+            public void SetWeather(string weatherId) { }
+            public void AdvanceTimeHours(int hours) { }
+        }
+
+        private sealed class NoOpTerritoryWarAdapter : ITerritoryWarAdapter
+        {
+            public int SpawnWaveEnemy(string zoneId, int waveNumber) { return 0; }
+            public bool IsEntityAlive(int entityHandle) { return false; }
+            public int CreateZoneBlip(string zoneId) { return 0; }
         }
     }
 }

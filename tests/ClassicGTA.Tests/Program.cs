@@ -37,9 +37,10 @@ namespace ClassicGTA.Tests
             tests.AddRange(Phase5CTests.GetAll());
             tests.AddRange(HardenRegressionTests.GetAll());
             tests.AddRange(AdapterSeamTests.GetAll());
+            tests.AddRange(Phase7ArcadeTests.GetAll());
 
             // V-21 Fix: Reject duplicate test names and enforce minimum unique test count.
-            const int expectedMinTests = 116;
+            const int expectedMinTests = 136;
             var seenNames = new HashSet<string>(StringComparer.Ordinal);
             foreach (var entry in tests)
             {

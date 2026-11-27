@@ -36,6 +36,8 @@
     <Compile Include="EmergencyServiceType.cs" />
     <Compile Include="EntityOwnership.cs" />
     <Compile Include="GameKey.cs" />
+    <Compile Include="IArcadeFreedomAdapter.cs" />
+    <Compile Include="ICarTheftAdapter.cs" />
     <Compile Include="ICompanionAdapter.cs" />
     <Compile Include="IEconomyService.cs" />
     <Compile Include="IEntityCleanupAdapter.cs" />
@@ -48,7 +50,10 @@
     <Compile Include="INotificationService.cs" />
     <Compile Include="IPersistenceStore.cs" />
     <Compile Include="IPetAdapter.cs" />
+    <Compile Include="ISandboxCheatAdapter.cs" />
     <Compile Include="ITaxiAdapter.cs" />
+    <Compile Include="ITerritoryWarAdapter.cs" />
+    <Compile Include="IWantedSystemAdapter.cs" />
     <Compile Include="IWeaponService.cs" />
     <Compile Include="MedalRating.cs" />
     <Compile Include="PersistenceCodec.cs" />

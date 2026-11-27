@@ -47,7 +47,12 @@ namespace ClassicGTA.Adapter.GTAV
                 new GtaVEntityCleanupAdapter(),
                 store,
                 _notifications,
-                storyCashEconomy: new GtaVEconomyService());
+                storyCashEconomy: new GtaVEconomyService(),
+                carTheftAdapter: new GtaVCarTheftAdapter(),
+                wantedAdapter: new GtaVWantedSystemAdapter(),
+                arcadeFreedomAdapter: new GtaVArcadeFreedomAdapter(),
+                cheatAdapter: new GtaVSandboxCheatAdapter(),
+                territoryWarAdapter: new GtaVTerritoryWarAdapter());
 
             _rootMenu = BuildMenus(out _zoneCheckbox);
 
@@ -220,6 +225,60 @@ namespace ClassicGTA.Adapter.GTAV
             AddAction(socialSub, "Dog: Sit", "Order dog to stay.", () => _host.PetModule.GiveCommand(PetCommand.Sit));
             AddAction(socialSub, "Dog: Guard / Attack Threats", "Order dog to defend you.", () => _host.PetModule.GiveCommand(PetCommand.Guard));
             AddAction(socialSub, "Dog: Send to Kennel", "Dismiss active guard dog.", () => _host.PetModule.DismissPet("Kennelled"));
+
+            // 7. GTA VI Arcade Restorations
+            var arcadeSub = AddSubmenu(root, "GTA VI Arcade Restorations", "Classic Car Theft, Wanted/Heat Reset, and Arcade Freedom.");
+            var carTheftCb = new NativeCheckboxItem("Instant Car Theft Unlock", "Unlocks targeted vehicles & disables alarms without lockpick QTEs.", _host.CarTheftModule.InstantUnlockEnabled);
+            carTheftCb.CheckboxChanged += (s, a) => { _host.CarTheftModule.InstantUnlockEnabled = carTheftCb.Checked; };
+            arcadeSub.Add(carTheftCb);
+
+            var wantedCb = new NativeCheckboxItem("Classic Wanted LoS Cooldown (20s)", "Clears stars + Criminal Profile Heat after 20s out of police sight.", _host.WantedModule.ClassicCooldownEnabled);
+            wantedCb.CheckboxChanged += (s, a) => { _host.WantedModule.ClassicCooldownEnabled = wantedCb.Checked; };
+            arcadeSub.Add(wantedCb);
+            AddAction(arcadeSub, "Pay 'n' Spray Bribe ($500)", "Clears wanted stars & Criminal Profile Heat via Mod Wallet.", () => _host.WantedModule.TryPayNSprayBribe());
+
+            var noRefuelCb = new NativeCheckboxItem("No Refuelling / Engine Top-Up", "Keeps vehicle fuel and engine health topped up.", _host.ArcadeFreedomModule.NoRefuellingEnabled);
+            noRefuelCb.CheckboxChanged += (s, a) => { _host.ArcadeFreedomModule.NoRefuellingEnabled = noRefuelCb.Checked; };
+            arcadeSub.Add(noRefuelCb);
+
+            var noSurvivalCb = new NativeCheckboxItem("No Survival Chores (Stamina)", "Continuously restores player stamina and vitals.", _host.ArcadeFreedomModule.NoSurvivalChoresEnabled);
+            noSurvivalCb.CheckboxChanged += (s, a) => { _host.ArcadeFreedomModule.NoSurvivalChoresEnabled = noSurvivalCb.Checked; };
+            arcadeSub.Add(noSurvivalCb);
+
+            var noVignetteCb = new NativeCheckboxItem("No Vignette / Post-FX", "Suppresses dark screen vignette post-processing.", _host.ArcadeFreedomModule.NoVignetteEnabled);
+            noVignetteCb.CheckboxChanged += (s, a) => { _host.ArcadeFreedomModule.NoVignetteEnabled = noVignetteCb.Checked; };
+            arcadeSub.Add(noVignetteCb);
+
+            // 8. Classic Cheats & Turf Wars
+            var cheatsSub = AddSubmenu(root, "Classic Cheats & Turf Wars", "Story Mode sandbox cheats and San Andreas-style district takeovers.");
+            AddAction(cheatsSub, "Refill Health & Armor", "Restores max health and full body armor.", () => _host.CheatEngine.RefillHealthAndArmor());
+            AddAction(cheatsSub, "Clear Wanted Level", "Instantly clears active police stars.", () => _host.CheatEngine.ClearWanted());
+
+            var neverWantedCb = new NativeCheckboxItem("Never Wanted", "Prevents police stars while enabled (Story Mode only).", _host.CheatEngine.NeverWantedEnabled);
+            neverWantedCb.CheckboxChanged += (s, a) => { _host.CheatEngine.NeverWantedEnabled = neverWantedCb.Checked; };
+            cheatsSub.Add(neverWantedCb);
+
+            var superJumpCb = new NativeCheckboxItem("Super Jump", "Enables classic super jump each frame.", _host.CheatEngine.SuperJumpEnabled);
+            superJumpCb.CheckboxChanged += (s, a) => { _host.CheatEngine.SuperJumpEnabled = superJumpCb.Checked; };
+            cheatsSub.Add(superJumpCb);
+
+            AddAction(cheatsSub, "Repair Current Vehicle", "Instantly repairs your current vehicle.", () => _host.CheatEngine.RepairVehicle());
+            AddAction(cheatsSub, "Spawn Cheetah Classic", "Spawns a tracked Cheetah Classic in front of you.", () => _host.CheatEngine.TrySpawnClassicVehicle("cheetah2"));
+            AddAction(cheatsSub, "Spawn Infernus Classic", "Spawns a tracked Infernus Classic in front of you.", () => _host.CheatEngine.TrySpawnClassicVehicle("infernus2"));
+            AddAction(cheatsSub, "Spawn Turismo Classic", "Spawns a tracked Turismo Classic in front of you.", () => _host.CheatEngine.TrySpawnClassicVehicle("turismo2"));
+            AddAction(cheatsSub, "Weather: Extra Sunny", "Sets weather to Extra Sunny.", () => _host.CheatEngine.SetWeather("EXTRASUNNY"));
+            AddAction(cheatsSub, "Weather: Thunder", "Sets weather to Thunder.", () => _host.CheatEngine.SetWeather("THUNDER"));
+            AddAction(cheatsSub, "Advance Clock +6 Hours", "Advances world time by 6 hours.", () => _host.CheatEngine.AdvanceTime(6));
+            AddAction(cheatsSub, "Turf War: Start Davis Takeover", "Start 3-wave Turf War for Davis ($5,000 bonus + $2,500/day).", () => _host.TerritoryWarModule.TryStartTakeover("turf.davis", Game.GameTime));
+            AddAction(cheatsSub, "Turf War: Start Del Perro Takeover", "Start 3-wave Turf War for Del Perro.", () => _host.TerritoryWarModule.TryStartTakeover("turf.del_perro", Game.GameTime));
+            AddAction(cheatsSub, "Turf War: Start Downtown Takeover", "Start 3-wave Turf War for Downtown.", () => _host.TerritoryWarModule.TryStartTakeover("turf.downtown", Game.GameTime));
+            AddAction(cheatsSub, "Turf War: Start LS Docks Takeover", "Start 3-wave Turf War for LS Docks.", () => _host.TerritoryWarModule.TryStartTakeover("turf.docks", Game.GameTime));
+            AddAction(cheatsSub, "Turf War: Abort Active Takeover", "Aborts active Turf War and cleans up enemies.", () => _host.TerritoryWarModule.AbortTakeover("UserAborted", false));
+            AddAction(cheatsSub, "Turf War: Collect Turf Income", "Collects accrued UTC daily turf income ($2,500/zone/day).", () =>
+            {
+                var res = _host.TerritoryWarModule.CollectTurfIncome(_host.CurrentUtcDay);
+                if (res.Status != ClassicGTA.Core.Arcade.TurfIncomeStatus.Paid) _notifications.Show(res.Message);
+            });
 
             return root;
         }

@@ -26,7 +26,7 @@ The mod keeps its own wallet, ledger and log under `ClassicGTA_Data\`, and never
 
 ### Nothing happened when I pressed the buttons.
 
-Two possibilities. First, the mod has never been verified in-game — this is a prototype, and that is exactly what Phase 6B is for. Second, if the session detector cannot read the game's network state, the mod fails closed and stays inert on purpose. Check `ClassicGTA_Data\ClassicGTA.log`.
+Two possibilities. First, while first live load on GTA V Legacy (`1.0.3889.0`) is verified, full feature soak testing is still underway in Phase 6B. Second, if the session detector cannot read the game's network state, the mod fails closed and stays inert on purpose. Check `ClassicGTA_Data\ClassicGTA.log`.
 
 ### Why are three features hidden?
 

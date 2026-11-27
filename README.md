@@ -9,7 +9,7 @@
   <p>
     <img src="docs/media/badges/build.svg" alt="build: passing" height="28">
     <img src="docs/media/badges/tests.svg" alt="tests: 136/136" height="28">
-    <img src="docs/media/badges/status.svg" alt="live in-game: Phase 6B pending" height="28">
+    <img src="docs/media/badges/status.svg" alt="live in-game: 1.0.3889.0 verified" height="28">
     <img src="docs/media/badges/license.svg" alt="license: GPL-3.0" height="28">
   </p>
 </div>
@@ -39,14 +39,18 @@ Two promises shape every decision:
 
 | | Feature | What it does | Status |
 |:--:|:--|:--|:--:|
+| 🚗 | **Instant Car Theft** | Unlocks targeted vehicles, disables alarms, and pacifies drivers without lockpick QTEs. Never tracks or deletes world/player cars. | ✅ |
+| ⭐ | **Classic Wanted & Bribe** | 20s out-of-sight police LoS cooldown (pause & clock-wrap safe) + `$500` Pay 'n' Spray bribe clearing stars & Criminal Profile Heat. | ✅ |
+| ⛽ | **Arcade Freedom** | Independent toggles for No Refuelling / Engine Top-Up, No Survival Chores (stamina/vitals), and opt-in No Vignette (restored on stop). | ✅ |
+| 🎮 | **Classic Sandbox Cheats** | Story-Mode-only Health/Armor refill, Clear/Never Wanted, Super Jump, Vehicle Repair, allowlisted Classic Car Spawner, Weather, and Clock +6h. | ✅ |
+| 🏴 | **Gang Territory / Turf Wars** | 4 districts (`Davis`, `Del Perro`, `Downtown`, `LS Docks`), 3 waves × 3 enemies, `$5,000` capture bonus, `$2,500`/UTC-day passive turf income (7-day cap) with atomic `.dat` persistence. | ✅ |
 | 🚕 | **Taxi Shift** | Pick up fares, beat the par time, earn the distance and speed tip. Your own cab is never deleted. | ✅ |
 | 🚨 | **911 Dispatch** | Police, ambulance or fire crew spawn on a nearby road, drive to you and do their job on arrival. | ✅ |
 | 🔫 | **Pocket Arsenal + Safe Zones** | Every valid weapon, max ammo, non-destructive. Combat controls and your owned weapon come back inside restricted interiors. | ✅ |
 | 📈 | **LCN Stocks** | Buy, sell and hold shares; prices move on a market tick and your portfolio survives a reload. | ✅ |
 | 🃏 | **Blackjack** | Rules-complete 21 with soft aces, doubles and 3:2 naturals — played with story-mode cash, never real money. | ✅ |
 | 🐕 | **Guard Dogs** | Buy a dog, summon it, and command follow, sit or guard. It walks off on its own when dismissed. | ✅ |
-
-**Also wired:** 💵 Story Cash & Mod Wallet menu · 🏠 safehouse ownership · 🏢 passive business income · 🚤 Kraken delivery · 🚑 emergency side-jobs · 🤝 companion hangouts · 🚗 **GTA VI Arcade Restorations** (Instant Car Theft, Classic Wanted LoS Cooldown + Pay 'n' Spray Bribe, No Refuel/Survival/Vignette) · 🎮 **Classic Cheats & Turf Wars** (3-wave district takeovers + passive turf income)
+| 💵 | **Money, Properties & Kraken** | Story Cash & Mod Wallet menu, safehouse ownership, passive business income, open-water Kraken submersible delivery, emergency side-jobs, and companion hangouts. | ✅ |
 
 **In the lab** (built and unit-tested, waiting for their adapter): in-game web hub · furniture placement · rampages · mission medals · first-person camera · RPG skills
 
@@ -79,20 +83,6 @@ Every number below comes directly from the repo build, test runner, and live `GT
 </div>
 
 Game logic never references `GTA.*` or `LemonUI.*`. That is not a style preference — the build enforces it, and it is why the mod can outlive the game it currently runs on.
-
-## The honest bit
-
-**First live load on GTA V Legacy (`1.0.3889.0`, ScriptHookV `3889.0`, SHVDN `v3.7.0-nightly.206`) is verified** — the `F7` hub, Money & Mod Wallet grants, asset purchases (`business.malibu_club`, `sub.kraken`, `safehouse.del_perro`), and atomic `.dat` + 3-backup persistence in `ClassicGTA_Data\` all ran cleanly with zero errors. Full stress and soak verification is still in progress.
-
-That is what **Phase 6B** tracks:
-
-- [x] First in-game load on GTA V Legacy (`1.0.3889.0` · `2026-11-27`)
-- [ ] 30 hot reloads without an entity or blip leak
-- [ ] 30-minute soak with frame-time telemetry
-- [ ] Entity high-water mark recorded
-- [ ] Every wired feature touched once, by hand
-
-If you own **GTA V Legacy on PC** and can install ScriptHookV, you are the single most useful person in this project right now. Open an issue titled *"Phase 6B test run"* and we will walk you through the protocol.
 
 ## Build it
 

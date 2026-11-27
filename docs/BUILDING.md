@@ -6,7 +6,7 @@ Two audiences live here: players who want the mod running, and developers who wa
 
 ## Players — install on GTA V Legacy (PC)
 
-> **Status:** the adapter is compile-verified but has never been run in-game. Treat this as a prototype install. If it breaks, the log plus a report is genuinely useful.
+> **Status:** First live load on **GTA V Legacy (`1.0.3889.0`, ScriptHookV `3889.0`, SHVDN `v3.7.0-nightly.206`)** is verified (`2026-11-27`) with `0` errors in `ClassicGTA.log`. Full 30-reload & 30-minute soak verification (including the Phase 7 Arcade Pack menus) is in progress. If anything breaks, the log plus a report is genuinely useful.
 
 ### What you need
 
@@ -113,6 +113,6 @@ Correct. The mod is story-mode only and blocks itself in multiplayer.
 Update ScriptHookV. The mod cannot fix a script hook that does not load.
 
 **A feature is listed but does nothing.**
-Check [`FEATURES.md`](FEATURES.md) — some systems are lab-only, and nothing is live-verified yet.
+Check [`FEATURES.md`](FEATURES.md) — some systems are lab-only, and Phase 6B soak testing is still in progress.
 
 When reporting, include the last lines of `ClassicGTA.log`, your GTA V edition and `GTA5.exe` version, and the ScriptHookV/SHVDN3 versions.

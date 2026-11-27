@@ -2,10 +2,8 @@
 
 > **Purpose:** Any new session, AI model (Gemini, Claude, GPT, Qwen, Kimi), or CLI tool can read this single file, run `.\build.ps1`, and immediately resume from the exact next phase with zero lost context.
 
-**Repository:** `https://github.com/HailLucifer666/classic-gta-overhaul-mod` (private)
-**Workspace Root:** `E:\Classic GTA overhaul mod for PC`
+**Repository:** `https://github.com/HailLucifer666/GTA-VI-OverHaul-MoD` (public)
 **Last Updated:** `2026-11-28`
-**Dev Team Installed Locally:** `.zcode/`, `.claude/`, `AGENTS.md`, `TEAM-USAGE.md` (from `E:\WIFI Hack\Claude-Code-Dev-Studios`)
 
 ---
 

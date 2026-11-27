@@ -31,3 +31,9 @@ ClassicGTA_Data/
 *.pem
 .vscode/
 .idea/
+
+# Local AI agent tooling (kept on disk, excluded from public repo)
+.claude/
+.zcode/
+AGENTS.md
+TEAM-USAGE.md

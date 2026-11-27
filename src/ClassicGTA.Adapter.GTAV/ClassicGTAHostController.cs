@@ -38,6 +38,7 @@ namespace ClassicGTA.Adapter.GTAV
         private readonly IGameContext _context;
         private readonly INotificationService _notifications;
         private readonly Func<DateTime> _utcNowProvider;
+        private readonly IEconomyService _storyCash;
 
         public string SlotId { get; private set; }
         public EntityOwnershipRegistry Registry { get; private set; }
@@ -71,7 +72,8 @@ namespace ClassicGTA.Adapter.GTAV
             INotificationService notifications,
             Func<DateTime> utcNowProvider = null,
             string slotId = DefaultSlotId,
-            int initialWalletBalance = ModWalletEconomyService.DefaultInitialBalance)
+            int initialWalletBalance = ModWalletEconomyService.DefaultInitialBalance,
+            IEconomyService storyCashEconomy = null)
         {
             if (context == null) throw new ArgumentNullException("context");
             if (weaponService == null) throw new ArgumentNullException("weaponService");
@@ -88,6 +90,7 @@ namespace ClassicGTA.Adapter.GTAV
             _context = context;
             _notifications = notifications;
             _utcNowProvider = utcNowProvider ?? (() => DateTime.UtcNow);
+            _storyCash = storyCashEconomy;
             SlotId = string.IsNullOrWhiteSpace(slotId) ? DefaultSlotId : slotId.Trim();
 
             Registry = new EntityOwnershipRegistry(cleanupAdapter, 20);
@@ -138,6 +141,39 @@ namespace ClassicGTA.Adapter.GTAV
             PurchaseResult result = AssetsEngine.TryPurchase(contentId, CurrentUtcDay);
             _notifications.Show(result.Message);
             return result;
+        }
+
+        public bool TryAddStoryCash(int amount)
+        {
+            if (_context.IsOnlineSession)
+            {
+                _notifications.Show("~r~Blocked: Story Mode only.");
+                return false;
+            }
+            if (amount <= 0 || _storyCash == null) return false;
+
+            _storyCash.Credit(amount, "UserMenuGrant");
+            _notifications.Show("Story Cash ~g~+$" + amount.ToString("N0") + "~s~ (Total: ~g~$" + _storyCash.GetCash().ToString("N0") + "~s~)");
+            return true;
+        }
+
+        public bool TryAddModWalletCash(int amount)
+        {
+            if (_context.IsOnlineSession)
+            {
+                _notifications.Show("~r~Blocked: Story Mode only.");
+                return false;
+            }
+            if (amount <= 0) return false;
+
+            Wallet.Credit(amount, "UserMenuGrant");
+            _notifications.Show("Mod Wallet ~g~+$" + amount.ToString("N0") + "~s~ (Balance: ~g~$" + Wallet.GetCash().ToString("N0") + "~s~)");
+            return true;
+        }
+
+        public int GetStoryCash()
+        {
+            return _storyCash != null ? _storyCash.GetCash() : 0;
         }
 
         public PassiveIncomeResult CollectPassiveIncome()

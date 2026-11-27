@@ -46,7 +46,7 @@ Two promises shape every decision:
 | 🃏 | **Blackjack** | Rules-complete 21 with soft aces, doubles and 3:2 naturals — played with story-mode cash, never real money. | ✅ |
 | 🐕 | **Guard Dogs** | Buy a dog, summon it, and command follow, sit or guard. It walks off on its own when dismissed. | ✅ |
 
-**Also wired:** 🏠 safehouse ownership · 🏢 passive business income · 🚤 Kraken delivery · 🚑 emergency side-jobs · 🤝 companion hangouts
+**Also wired:** 💵 Story Cash & Mod Wallet menu · 🏠 safehouse ownership · 🏢 passive business income · 🚤 Kraken delivery · 🚑 emergency side-jobs · 🤝 companion hangouts
 
 **In the lab** (built and unit-tested, waiting for their adapter): in-game web hub · furniture placement · rampages · mission medals · first-person camera · RPG skills
 
@@ -62,11 +62,11 @@ Game logic never references `GTA.*` or `LemonUI.*`. That is not a style preferen
 
 ## The honest bit
 
-**Nothing has run inside GTA V yet.** The suite is green, the adapter compiles, the seams are tested — but live behaviour is unmeasured. We would rather say that than pretend.
+**First live load on GTA V Legacy (`1.0.3889.0`, ScriptHookV `3889.0`, SHVDN `v3.7.0-nightly.206`) is verified** — the `F7` hub, Money & Mod Wallet grants, asset purchases (`business.malibu_club`, `sub.kraken`, `safehouse.del_perro`), and atomic `.dat` + 3-backup persistence in `ClassicGTA_Data\` all ran cleanly with zero errors. Full stress and soak verification is still in progress.
 
-That is what **Phase 6B** is for:
+That is what **Phase 6B** tracks:
 
-- [ ] First in-game load on GTA V Legacy
+- [x] First in-game load on GTA V Legacy (`1.0.3889.0` · `2026-11-27`)
 - [ ] 30 hot reloads without an entity or blip leak
 - [ ] 30-minute soak with frame-time telemetry
 - [ ] Entity high-water mark recorded
@@ -116,7 +116,7 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before you start. Be decent to each ot
 | Phase | Goal | State |
 |:--|:--|:--:|
 | **Core** | Engine-agnostic systems, economy, persistence, 116 tests, 12 probes | ✅ Done |
-| **Phase 6B** | Live GTA V Legacy verification: reloads, soak, frame time, leaks | 🔜 Next |
+| **Phase 6B** | Live GTA V Legacy verification: reloads, soak, frame time, leaks | 🔄 In Progress (first load ✅) |
 | **GTA VI** | Swap the adapter when a public PC scripting interface ships | ⏳ Waiting on the game |
 
 ## Support the project

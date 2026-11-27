@@ -46,7 +46,8 @@ namespace ClassicGTA.Adapter.GTAV
                 new GtaVSubmersibleAdapter(),
                 new GtaVEntityCleanupAdapter(),
                 store,
-                _notifications);
+                _notifications,
+                storyCashEconomy: new GtaVEconomyService());
 
             _rootMenu = BuildMenus(out _zoneCheckbox);
 
@@ -143,7 +144,17 @@ namespace ClassicGTA.Adapter.GTAV
             AddAction(jobsSub, "Emergency Job: Start Level 1", "Sit in Police, Ambulance, or Fire Truck and start 12-level waves.", () => _host.SideJobModule.StartJob(Game.GameTime));
             AddAction(jobsSub, "Emergency Job: Abort", "Cancel active emergency side-job.", () => _host.SideJobModule.AbortJob("UserAborted"));
 
-            // 4. Economy, Properties & Stocks (Mod Wallet)
+            // 4. Money & Mod Wallet (Story Mode Only)
+            var moneySub = AddSubmenu(root, "Money & Mod Wallet", "Add Story Mode cash or Classic GTA Mod Wallet funds (Story Mode only).");
+            AddAction(moneySub, "Check Balances", "Shows Story Mode cash and Classic GTA Mod Wallet balance.", () =>
+                _notifications.Show("Story Cash: ~g~$" + _host.GetStoryCash().ToString("N0") + "~s~ | Mod Wallet: ~g~$" + _host.Wallet.GetCash().ToString("N0")));
+            AddAction(moneySub, "Story Cash: +$10,000", "Adds $10,000 to your GTA V Story Mode protagonist.", () => _host.TryAddStoryCash(10000));
+            AddAction(moneySub, "Story Cash: +$100,000", "Adds $100,000 to your GTA V Story Mode protagonist.", () => _host.TryAddStoryCash(100000));
+            AddAction(moneySub, "Story Cash: +$1,000,000", "Adds $1,000,000 to your GTA V Story Mode protagonist.", () => _host.TryAddStoryCash(1000000));
+            AddAction(moneySub, "Mod Wallet: +$100,000", "Adds $100,000 to Classic GTA Mod Wallet (Properties/Stocks/Blackjack).", () => _host.TryAddModWalletCash(100000));
+            AddAction(moneySub, "Mod Wallet: +$1,000,000", "Adds $1,000,000 to Classic GTA Mod Wallet (Properties/Stocks/Blackjack).", () => _host.TryAddModWalletCash(1000000));
+
+            // 5. Economy, Properties & Stocks (Mod Wallet)
             var econSub = AddSubmenu(root, "Properties, Businesses & Stocks", "Dedicated Mod Wallet keeps cash and assets synchronized across saves.");
             AddAction(econSub, "Check Mod Wallet Balance", "Displays your Classic GTA Mod Wallet balance.", () => _notifications.Show("Classic GTA Mod Wallet: ~g~$" + _host.Wallet.GetCash()));
             AddAction(econSub, "Buy Del Perro Safehouse ($50,000) [Ledger]", "Unlocks safehouse ownership record (world interior pending).", () => _host.PurchaseAsset("safehouse.del_perro"));

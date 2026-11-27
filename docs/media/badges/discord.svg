@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="28" viewBox="0 0 220 28" role="img" aria-label="discord: join the crew">
+  <rect x="0.5" y="0.5" width="219" height="27" rx="6" fill="#120A1E" stroke="#5865F2"/>
+  <line x1="88" y1="4" x2="88" y2="24" stroke="#2A1B40"/>
+  <text x="44" y="18" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="11" fill="#B9AECB">discord</text>
+  <text x="154" y="18" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="11" font-weight="700" fill="#7289DA">join the crew</text>
+</svg>
